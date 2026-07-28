@@ -52,11 +52,19 @@ st.markdown(
         section[data-testid="stSidebar"] hr {
             display: none !important;
         }
+        
         /* Ocultar completamente la insignia "Hosted with Streamlit" y el footer */
-        footer {visibility: hidden; display: none !important;}
-        .viewerBadge_container__1QSob {display: none !important;}
-        [data-testid="stStatusWidget"] {visibility: hidden; display: none !important;}
-        #MainMenu {visibility: hidden;}
+        footer { visibility: hidden; display: none !important; }
+        #MainMenu { visibility: hidden; display: none !important; }
+        [data-testid="stStatusWidget"] { visibility: hidden; display: none !important; }
+        
+        /* Selector avanzado y agresivo para bloquear el badge flotante inferior derecho */
+        div[class*="viewerBadge"] { 
+            display: none !important; 
+            visibility: hidden !important; 
+            opacity: 0 !important; 
+            pointer-events: none !important; 
+        }
         
         /* Ocultar el aviso de "Press Enter to apply" en todos los inputs */
         [data-testid="InputInstructions"] {
