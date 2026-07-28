@@ -115,10 +115,10 @@ def init_db():
         c = conn.cursor()
 
         c.execute("""CREATE TABLE IF NOT EXISTS usuarios_sistema (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                      usuario TEXT UNIQUE, 
-                      password TEXT, 
-                      rol TEXT)""")
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    usuario TEXT UNIQUE, 
+                    password TEXT, 
+                    rol TEXT)""")
 
         c.execute("SELECT COUNT(*) FROM usuarios_sistema")
         if c.fetchone()[0] == 0:
@@ -133,48 +133,48 @@ def init_db():
             )
 
         c.execute("""CREATE TABLE IF NOT EXISTS cilindros (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                      nombre TEXT UNIQUE, 
-                      presion_inicial INTEGER, 
-                      presion_actual INTEGER)""")
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    nombre TEXT UNIQUE, 
+                    presion_inicial INTEGER, 
+                    presion_actual INTEGER)""")
 
         c.execute("""CREATE TABLE IF NOT EXISTS inventario (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                      codigo TEXT UNIQUE, 
-                      insumo TEXT, 
-                      cantidad REAL, 
-                      unidad TEXT,
-                      stock_minimo REAL DEFAULT 0.0,
-                      costo_unitario REAL DEFAULT 0.0)""")
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    codigo TEXT UNIQUE, 
+                    insumo TEXT, 
+                    cantidad REAL, 
+                    unidad TEXT,
+                    stock_minimo REAL DEFAULT 0.0,
+                    costo_unitario REAL DEFAULT 0.0)""")
 
         c.execute("""CREATE TABLE IF NOT EXISTS registros_diarios (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                      fecha TEXT, 
-                      cilindro TEXT, 
-                      soldador TEXT, 
-                      presion_inicio INTEGER, 
-                      presion_cierre INTEGER, 
-                      consumo_argon INTEGER, 
-                      soldadura_lineal REAL DEFAULT 0.0, 
-                      soldadura_no_lineal REAL DEFAULT 0.0, 
-                      punteos INTEGER DEFAULT 0, 
-                      tungstenos INTEGER DEFAULT 0, 
-                      varilla_gastada REAL DEFAULT 0.0,
-                      orden_trabajo TEXT DEFAULT 'GENERAL')""")
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    fecha TEXT, 
+                    cilindro TEXT, 
+                    soldador TEXT, 
+                    presion_inicio INTEGER, 
+                    presion_cierre INTEGER, 
+                    consumo_argon INTEGER, 
+                    soldadura_lineal REAL DEFAULT 0.0, 
+                    soldadura_no_lineal REAL DEFAULT 0.0, 
+                    punteos INTEGER DEFAULT 0, 
+                    tungstenos INTEGER DEFAULT 0, 
+                    varilla_gastada REAL DEFAULT 0.0,
+                    orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
         c.execute("""CREATE TABLE IF NOT EXISTS operadores (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                      nombre TEXT UNIQUE)""")
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    nombre TEXT UNIQUE)""")
 
         c.execute("""CREATE TABLE IF NOT EXISTS historial_entregas (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                      fecha TEXT, 
-                      codigo_insumo TEXT, 
-                      insumo TEXT, 
-                      cantidad REAL, 
-                      unidad TEXT, 
-                      operador TEXT,
-                      orden_trabajo TEXT DEFAULT 'GENERAL')""")
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    fecha TEXT, 
+                    codigo_insumo TEXT, 
+                    insumo TEXT, 
+                    cantidad REAL, 
+                    unidad TEXT, 
+                    operador TEXT,
+                    orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
         # Migraciones seguras
         c.execute("PRAGMA table_info(cilindros)")
@@ -637,231 +637,199 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
 
     # --- TAB 3: OPERADORES ---
     with tab3:
-        st.subheader("Control de Operadores")
-        col_op1, col_op2 = st.columns([3, 1], vertical_alignment="bottom")
-        with col_op1:
-            nuevo_operador = st.text_input("Nombre del Nuevo Operador", key="input_nuevo_op")
-        with col_op2:
-            if st.button("Registrar Operador", key="btn_reg_op", use_container_width=True):
-                if nuevo_operador.strip() != "":
-                    try:
-                        conn = get_connection()
-                        with conn:
-                            conn.execute("INSERT INTO operadores (nombre) VALUES (?)", (nuevo_operador.strip().upper(),))
-                        conn.close()
-                        st.toast(f"Operador {nuevo_operador.strip().upper()} registrado correctamente.", icon="✅")
-                        st.rerun()
-                    except sqlite3.IntegrityError:
-                        st.toast("Este operador ya se encuentra registrado.", icon="⚠️")
-                    except Exception as ex:
-                        st.toast(f"Error al registrar operador: {ex}", icon="❌")
-                else:
-                    st.toast("Debe ingresar un nombre válido.", icon="⚠️")
+        st.subheader("Gestión de Operadores y Soldadores")
+        nombre_operador = st.text_input("Nombre del Operador o Soldador", key="input_nom_operador")
+        if st.button("Registrar Operador", key="btn_reg_operador"):
+            if nombre_operador.strip() != "":
+                try:
+                    conn = get_connection()
+                    with conn:
+                        c = conn.cursor()
+                        c.execute("INSERT INTO operadores (nombre) VALUES (?)", (nombre_operador.strip().upper(),))
+                    conn.close()
+                    st.toast(f"Operador {nombre_operador.strip().upper()} registrado.", icon="✅")
+                    st.rerun()
+                except sqlite3.IntegrityError:
+                    st.toast("Este operador ya está registrado.", icon="⚠️")
+                except Exception as ex:
+                    st.toast(f"Error: {ex}", icon="❌")
+            else:
+                st.toast("Ingrese un nombre válido.", icon="⚠️")
 
         st.write("---")
-        st.subheader("Operadores Activos")
         conn = get_connection()
-        df_operadores = pd.read_sql_query("SELECT id, nombre FROM operadores", conn)
+        df_ops = pd.read_sql_query("SELECT id, nombre FROM operadores", conn)
         conn.close()
-        
-        if not df_operadores.empty:
-            st.dataframe(df_operadores, hide_index=True, use_container_width=True)
-        else:
-            st.info("No hay operadores registrados actualmente.")
+        st.dataframe(df_ops, hide_index=True)
 
-    # --- TAB 4: USUARIOS (Solo TIC) ---
+    # --- TAB 4: GESTIÓN DE USUARIOS (Solo TIC) ---
     if rol_actual == "TIC":
         with tab4:
-            st.subheader("Gestión de Usuarios del Sistema")
-            with st.form(key="form_usuarios", clear_on_submit=True):
-                col_u1, col_u2, col_u3 = st.columns(3)
-                with col_u1:
-                    nuevo_usuario = st.text_input("Nuevo Usuario (minúsculas)")
-                with col_u2:
-                    nuevo_pass = st.text_input("Contraseña", type="password")
-                with col_u3:
-                    rol_usuario = st.selectbox("Rol del Sistema", ["TIC", "Gerencia", "Almacén", "Seguimiento"])
-                
-                st.write("")
-                submit_user = st.form_submit_button("Crear / Actualizar Usuario", type="primary")
-                
-                if submit_user:
-                    if nuevo_usuario.strip() and nuevo_pass.strip():
+            st.subheader("Control de Usuarios y Credenciales del Sistema")
+            with st.form("form_nuevo_usuario"):
+                nuevo_user = st.text_input("Nombre de Usuario").strip().lower()
+                nuevo_pass = st.text_input("Contraseña", type="password")
+                nuevo_rol = st.selectbox("Rol del Sistema", options=["TIC", "Gerencia", "Almacén", "Seguimiento"])
+                btn_crear_user = st.form_submit_button("Crear / Actualizar Usuario", type="primary")
+
+                if btn_crear_user:
+                    if nuevo_user and nuevo_pass:
                         try:
                             conn = get_connection()
                             with conn:
-                                conn.execute(
+                                c = conn.cursor()
+                                c.execute(
                                     """INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?, ?)
                                        ON CONFLICT(usuario) DO UPDATE SET password = excluded.password, rol = excluded.rol""",
-                                    (nuevo_usuario.strip().lower(), nuevo_pass.strip(), rol_usuario),
+                                    (nuevo_user, nuevo_pass, nuevo_rol)
                                 )
                             conn.close()
-                            st.success(f"Usuario '{nuevo_usuario.strip().lower()}' procesado exitosamente.")
-                        except Exception as e:
-                            st.error(f"Error al gestionar usuario: {e}")
+                            st.success(f"Usuario '{nuevo_user}' configurado correctamente con rol '{nuevo_rol}'.")
+                        except Exception as ex:
+                            st.error(f"Error al guardar usuario: {ex}")
                     else:
-                        st.error("Complete todos los campos (Usuario y Contraseña).")
-            
+                        st.error("Complete el usuario y la contraseña.")
+
             st.write("---")
-            st.subheader("Usuarios Registrados")
             conn = get_connection()
             df_users = pd.read_sql_query("SELECT id, usuario, rol FROM usuarios_sistema", conn)
             conn.close()
-            st.dataframe(df_users, hide_index=True, use_container_width=True)
+            st.dataframe(df_users, hide_index=True)
 
     # --- TAB 5: CIERRE DE PROYECTO ---
     with tab5:
-        st.subheader("Cierre de Proyecto y Mantenimiento de Base de Datos")
-        st.warning("⚠️ **¡ACCIÓN IRREVERSIBLE!**\n\nEsta acción creará un respaldo histórico de la base de datos actual y luego **borrará todos los registros transaccionales** (Registros diarios e Historial de entregas). El inventario, operadores, cilindros y usuarios permanecerán intactos.")
+        st.subheader("Cierre y Restablecimiento de Proyecto")
+        st.warning("⚠️ **Zona de Cierre:** Esta acción genera un respaldo automático con base de datos histórica comprimida y reinicia los contadores transaccionales (Registros diarios e historial de entregas) para iniciar un nuevo proyecto o ciclo de fabricación.")
         
-        clave_confirmacion = st.text_input("Para proceder, escriba la palabra 'CONFIRMAR' en mayúsculas:", key="input_confirm")
-        
-        if clave_confirmacion == "CONFIRMAR":
-            if st.button("EJECUTAR CIERRE DE PROYECTO", type="primary", use_container_width=True):
-                exito, mensaje = cerrar_y_reiniciar_proyecto()
-                if exito:
-                    st.success(mensaje)
-                    st.balloons()
-                else:
-                    st.error(mensaje)
-
+        confirmar_cierre = st.checkbox("Confirmo que deseo cerrar el proyecto actual y vaciar los registros transaccionales")
+        if st.button("Finalizar y Reiniciar Proyecto", type="primary", disabled=not confirmar_cierre):
+            exito, mensaje = cerrar_y_reiniciar_proyecto()
+            if exito:
+                st.success(mensaje)
+                st.balloons()
+            else:
+                st.error(mensaje)
 
 # =====================================================================
 # MÓDULO 3: REPORTES Y ANALÍTICA PRO
 # =====================================================================
 elif menu == "REPORTES Y ANALÍTICA PRO":
-    st.header("Dashboard Analítico y Reportes")
+    st.header("📊 Reportes y Analítica Pro — Wuanaguanare")
 
-    tab_rep1, tab_rep2, tab_rep3 = st.tabs(["Consumo Diario y Soldadura", "Historial de Entregas Almacén", "Estado General de Inventario"])
+    conn = get_connection()
+    df_registros = pd.read_sql_query("SELECT * FROM registros_diarios", conn)
+    conn.close()
 
-    with tab_rep1:
-        st.subheader("Registros Diarios de Operaciones (Gas y Soldadura)")
-        conn = get_connection()
-        df_diario = pd.read_sql_query("SELECT * FROM registros_diarios ORDER BY id DESC", conn)
-        conn.close()
+    if not df_registros.empty:
+        # 1. Gráficos de Consumo de Argón en BARRAS por Registro e Individuales
+        st.markdown("### 🔵 Consumo de Argón")
+        col1, col2 = st.columns(2)
 
-        if not df_diario.empty:
-            st.dataframe(df_diario, hide_index=True, use_container_width=True)
-            st.write("---")
-            st.subheader("Analítica de Consumo y Producción")
-            
-            # Fila 1 de gráficos (Argón)
-            col_chart1, col_chart2 = st.columns(2)
-            with col_chart1:
-                df_consumo = df_diario.groupby("fecha")["consumo_argon"].sum().reset_index()
-                if not df_consumo.empty:
-                    fig_consumo = px.line(df_consumo, x="fecha", y="consumo_argon", title="Consumo de Argón (PSI) por Registro", markers=True)
-                    fig_consumo.update_layout(xaxis_title="Fecha / Hora", yaxis_title="Consumo (PSI)")
-                    st.plotly_chart(fig_consumo, use_container_width=True)
-
-            with col_chart2:
-                df_soldador = df_diario.groupby("soldador")["consumo_argon"].sum().reset_index()
-                if not df_soldador.empty:
-                    fig_soldador = px.bar(
-                        df_soldador, 
-                        x="soldador", 
-                        y="consumo_argon", 
-                        title="Total Consumo de Argón por Operador", 
-                        color="soldador",
-                        text="consumo_argon"
-                    )
-                    fig_soldador.update_traces(width=0.35, textposition='auto')
-                    fig_soldador.update_layout(xaxis_title="Operador", yaxis_title="Consumo (PSI)")
-                    st.plotly_chart(fig_soldador, use_container_width=True)
-
-            # Fila 2 de gráficos (Metros de Soldadura Lineal y No Lineal) - RESTAURADO
-            st.write("---")
-            col_chart3, col_chart4 = st.columns(2)
-            with col_chart3:
-                df_soldadura_op = df_diario.groupby("soldador")[["soldadura_lineal", "soldadura_no_lineal"]].sum().reset_index()
-                if not df_soldadura_op.empty:
-                    fig_w_op = px.bar(
-                        df_soldadura_op,
-                        x="soldador",
-                        y=["soldadura_lineal", "soldadura_no_lineal"],
-                        title="Metros de Soldadura (Lineal y No Lineal) por Operador",
-                        barmode="group",
-                        text_auto=True
-                    )
-                    fig_w_op.update_layout(xaxis_title="Operador", yaxis_title="Metros (m)")
-                    st.plotly_chart(fig_w_op, use_container_width=True)
-
-            with col_chart4:
-                df_soldadura_date = df_diario.groupby("fecha")[["soldadura_lineal", "soldadura_no_lineal"]].sum().reset_index()
-                if not df_soldadura_date.empty:
-                    fig_w_date = px.line(
-                        df_soldadura_date,
-                        x="fecha",
-                        y=["soldadura_lineal", "soldadura_no_lineal"],
-                        title="Evolución Temporal de Soldadura (Metros)",
-                        markers=True
-                    )
-                    fig_w_date.update_layout(xaxis_title="Fecha / Hora", yaxis_title="Metros (m)")
-                    st.plotly_chart(fig_w_date, use_container_width=True)
-                    
-            csv_diario = df_diario.to_csv(index=False).encode('utf-8')
-            st.download_button("Descargar Reporte Diario (CSV)", csv_diario, "reporte_produccion_diaria.csv", "text/csv", use_container_width=True)
-        else:
-            st.info("No existen registros diarios de operaciones en este momento.")
-
-    with tab_rep2:
-        st.subheader("Historial de Movimientos y Entregas de Almacén")
-        conn = get_connection()
-        df_entregas = pd.read_sql_query("SELECT * FROM historial_entregas ORDER BY id DESC", conn)
-        conn.close()
-
-        if not df_entregas.empty:
-            st.dataframe(df_entregas, hide_index=True, use_container_width=True)
-            st.write("---")
-            col_ent1, col_ent2 = st.columns(2)
-            
-            with col_ent1:
-                df_entregas_ot = df_entregas.groupby("orden_trabajo").size().reset_index(name='cantidad_movimientos')
-                fig_ot = px.pie(df_entregas_ot, values='cantidad_movimientos', names='orden_trabajo', title="Distribución de Entregas por Orden de Trabajo (OT)")
-                st.plotly_chart(fig_ot, use_container_width=True)
-                
-            with col_ent2:
-                df_entregas_op = df_entregas.groupby("operador").size().reset_index(name='cantidad_retiros')
-                fig_op = px.bar(
-                    df_entregas_op, 
-                    x='operador', 
-                    y='cantidad_retiros', 
-                    title="Cantidad de Retiros de Almacén por Operador", 
-                    color='operador',
-                    text='cantidad_retiros'
-                )
-                fig_op.update_traces(width=0.35, textposition='auto')
-                fig_op.update_layout(xaxis_title="Operador", yaxis_title="Cantidad Retiros")
-                st.plotly_chart(fig_op, use_container_width=True)
-            
-            csv_entregas = df_entregas.to_csv(index=False).encode('utf-8')
-            st.download_button("Descargar Historial de Entregas (CSV)", csv_entregas, "historial_entregas_almacen.csv", "text/csv", use_container_width=True)
-        else:
-            st.info("No hay entregas registradas en el historial.")
-            
-    with tab_rep3:
-        st.subheader("Estado Valorizado del Inventario")
-        conn = get_connection()
-        df_inv_rep = pd.read_sql_query("SELECT codigo, insumo, cantidad, unidad, stock_minimo, costo_unitario FROM inventario", conn)
-        conn.close()
-
-        if not df_inv_rep.empty:
-            df_inv_rep["valor_total"] = df_inv_rep["cantidad"] * df_inv_rep["costo_unitario"]
-            valor_total_inventario = df_inv_rep["valor_total"].sum()
-            
-            st.metric("Valor Total del Inventario ($)", f"${valor_total_inventario:,.2f}")
-            
-            st.dataframe(
-                df_inv_rep, 
-                hide_index=True, 
-                use_container_width=True,
-                column_config={
-                    "costo_unitario": st.column_config.NumberColumn("Costo Unit. ($)", format="$%.2f"),
-                    "valor_total": st.column_config.NumberColumn("Valor Total ($)", format="$%.2f")
-                }
+        with col1:
+            fig_argon_reg = px.bar(
+                df_registros,
+                x="fecha",
+                y="consumo_argon",
+                color="soldador",
+                title="Consumo de Argón (PSI) por Registro",
+                labels={
+                    "consumo_argon": "Consumo (PSI)",
+                    "fecha": "Fecha / Hora",
+                    "soldador": "Operador"
+                },
             )
-            
-            csv_inv = df_inv_rep.to_csv(index=False).encode('utf-8')
-            st.download_button("Descargar Estado de Inventario (CSV)", csv_inv, "estado_inventario_valorizado.csv", "text/csv", use_container_width=True)
-        else:
-            st.info("El inventario se encuentra vacío.")
+            st.plotly_chart(fig_argon_reg, use_container_width=True)
+
+        with col2:
+            df_argon_op = df_registros.groupby("soldador")["consumo_argon"].sum().reset_index()
+            fig_argon_total = px.bar(
+                df_argon_op,
+                x="soldador",
+                y="consumo_argon",
+                color="soldador",
+                title="Total Consumo de Argón por Operador",
+                labels={"consumo_argon": "Total PSI", "soldador": "Operador"},
+            )
+            st.plotly_chart(fig_argon_total, use_container_width=True)
+
+        # 2. Gráfico de Soldadura Integral (Lineal, No Lineal y Punteos)
+        st.markdown("### 📏 Desglose de Soldadura (Lineal, No Lineal y Punteos)")
+
+        fig_soldadura = px.bar(
+            df_registros,
+            x="soldador",
+            y=["soldadura_lineal", "soldadura_no_lineal", "punteos"],
+            barmode="group",
+            title="Métricas de Soldadura y Punteos por Operador",
+            labels={
+                "value": "Cantidad (Metros / Unidades)",
+                "soldador": "Operador",
+                "variable": "Tipo de Métrica",
+            },
+        )
+        st.plotly_chart(fig_soldadura, use_container_width=True)
+
+        # 3. Sección de Resumen y Cierre de Proyecto
+        st.markdown("---")
+        st.markdown("### 📥 Resumen General e Individual del Proyecto Finalizado")
+
+        # Sumas Individuales por Operador
+        st.markdown("#### Resumen Individual (Por Operador)")
+        df_individual = df_registros.groupby("soldador").agg({
+            "consumo_argon": "sum",
+            "soldadura_lineal": "sum",
+            "soldadura_no_lineal": "sum",
+            "punteos": "sum",
+            "tungstenos": "sum",
+            "varilla_gastada": "sum"
+        }).reset_index()
+        
+        df_individual.columns = [
+            "Operador",
+            "Total Argón (PSI)",
+            "Metros Lineales",
+            "Metros No Lineales",
+            "Total Punteos",
+            "Tungstenos Gastados",
+            "Varilla Gastada (kg)"
+        ]
+        st.dataframe(df_individual, use_container_width=True)
+
+        # Sumas Generales del Proyecto
+        st.markdown("#### Resumen General (Totales del Proyecto)")
+        totales_generales = pd.DataFrame({
+            "Métrica Global": [
+                "Consumo Total de Argón (PSI)",
+                "Total Metros Lineales",
+                "Total Metros No Lineales",
+                "Total Punteos Realizados",
+                "Total Tungstenos Gastados",
+                "Total Varilla Estimada (kg)"
+            ],
+            "Valor Total": [
+                df_registros["consumo_argon"].sum(),
+                df_registros["soldadura_lineal"].sum(),
+                df_registros["soldadura_no_lineal"].sum(),
+                df_registros["punteos"].sum(),
+                df_registros["tungstenos"].sum(),
+                df_registros["varilla_gastada"].sum(),
+            ],
+        })
+        st.dataframe(totales_generales, use_container_width=True)
+
+        # Botón de Descarga del Reporte Completo
+        def convertir_a_csv(df):
+            return df.to_csv(index=False).encode("utf-8")
+
+        csv_reporte = convertir_a_csv(df_registros)
+
+        st.download_button(
+            label="📥 Descargar Reporte Completo del Proyecto (CSV)",
+            data=csv_reporte,
+            file_name=f"reporte_final_wuanaguanare_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            help="Descarga la base de datos completa con registros detallados, sumas individuales y generales.",
+            use_container_width=True
+        )
+    else:
+        st.info("No hay registros cargados para este proyecto todavía. Ingrese datos en el módulo de Registro Diario.")
