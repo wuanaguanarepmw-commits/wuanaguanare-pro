@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Forzar idioma español en el DOM sin advertencias de deprecación
+# Forzar idioma español en el DOM sin advertencias
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
@@ -48,7 +48,6 @@ st.markdown(
             display: none !important;
         }
         
-        /* Ocultar completamente elementos de Streamlit Cloud (Deploy, Footer, Menú, Badges) */
         footer { visibility: hidden; display: none !important; }
         #MainMenu { visibility: hidden; display: none !important; }
         [data-testid="stStatusWidget"] { visibility: hidden; display: none !important; }
@@ -61,8 +60,6 @@ st.markdown(
             opacity: 0 !important; 
             pointer-events: none !important; 
         }
-        
-        /* Ocultar el aviso de "Press Enter to apply" en todos los inputs */
         [data-testid="InputInstructions"] {
             display: none !important;
         }
@@ -91,14 +88,12 @@ def init_db():
     conn = get_connection()
     c = conn.cursor()
 
-    # Tabla de Usuarios y Credenciales del Sistema
     c.execute("""CREATE TABLE IF NOT EXISTS usuarios_sistema (
                   id INTEGER PRIMARY KEY AUTOINCREMENT, 
                   usuario TEXT UNIQUE, 
                   password TEXT, 
                   rol TEXT)""")
 
-    # Crear usuario TIC por defecto si la tabla está totalmente vacía
     c.execute("SELECT COUNT(*) FROM usuarios_sistema")
     if c.fetchone()[0] == 0:
       c.execute(
@@ -122,7 +117,6 @@ def init_db():
           ("seguimiento", "argon123", "Seguimiento"),
       )
 
-    # Tablas operativas principales
     c.execute("""CREATE TABLE IF NOT EXISTS cilindros (
                   id INTEGER PRIMARY KEY AUTOINCREMENT, 
                   nombre TEXT UNIQUE, 
@@ -307,7 +301,6 @@ if not st.session_state.autenticado:
   st.stop()
 
 
-# Función de cierre y purga transaccional
 def cerrar_y_reiniciar_proyecto(directorio_respaldos="historico_db"):
   if not os.path.exists(directorio_respaldos):
     os.makedirs(directorio_respaldos)
@@ -418,7 +411,6 @@ if os.path.exists("wuanaguanare_db.sqlite"):
         use_container_width=True,
     )
 
-# Alerta global de stock bajo en barra lateral
 conn = get_connection()
 df_stock_check = pd.read_sql_query(
     "SELECT insumo, cantidad, stock_minimo, unidad FROM inventario WHERE"
@@ -651,6 +643,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     lista_cils_del = df_cil["nombre"].tolist() if not df_cil.empty else []
     options_cil_del = ["-- Seleccione un cilindro --"] + lista_cils_del
 
+
     def click_eliminar_cilindro():
       cil_seleccionado = st.session_state.get("sel_cil_eliminar")
       if cil_seleccionado and cil_seleccionado != "-- Seleccione un cilindro --":
@@ -658,7 +651,9 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           conn = get_connection()
           with conn:
             c = conn.cursor()
-            c.execute("DELETE FROM cilindros WHERE nombre = ?", (cil_seleccionado,))
+            c.execute(
+                "DELETE FROM cilindros WHERE nombre = ?", (cil_seleccionado,)
+            )
           conn.close()
           st.toast(
               f"Cilindro {cil_seleccionado} eliminado exitosamente.", icon="✅"
@@ -667,6 +662,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           st.toast(f"Error al eliminar: {ex}", icon="❌")
       else:
         st.toast("Seleccione un cilindro válido.", icon="⚠️")
+
 
     col_del_cil_sel, col_del_cil_btn = st.columns(
         [3, 1], vertical_alignment="bottom"
@@ -690,7 +686,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     conn = get_connection()
     df_cil_actualizado = pd.read_sql_query("SELECT * FROM cilindros", conn)
     conn.close()
-    st.dataframe(df_cil_actualizado, use_container_width=True, hide_index=True)
+    st.dataframe(df_cil_actualizado, hide_index=True)
 
   with tab2:
     st.subheader("Gestión de Inventario e Insumos")
@@ -786,7 +782,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     )
     conn.close()
     if not df_inv.empty:
-      st.dataframe(df_inv, use_container_width=True, hide_index=True)
+      st.dataframe(df_inv, hide_index=True)
     else:
       st.info("No hay insumos registrados en el inventario.")
 
@@ -954,13 +950,14 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     )
     conn.close()
     if not df_historial.empty:
-      st.dataframe(df_historial, use_container_width=True, hide_index=True)
+      st.dataframe(df_historial, hide_index=True)
     else:
       st.info("No hay entregas registradas todavía.")
 
     st.write("---")
     st.subheader("Eliminar Insumo del Inventario")
     options_inv_del = ["-- Seleccione un código de insumo --"] + lista_codigos_inv
+
 
     def click_eliminar_insumo_inv():
       inv_sel = st.session_state.get("sel_inv_eliminar")
@@ -978,6 +975,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           st.toast(f"Error al eliminar: {ex}", icon="❌")
       else:
         st.toast("Seleccione un código de insumo válido.", icon="⚠️")
+
 
     col_del_inv_sel, col_del_inv_btn = st.columns(
         [3, 1], vertical_alignment="bottom"
@@ -1000,6 +998,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
   with tab3:
     st.subheader("Gestión de Operadores / Soldadores")
 
+
     def click_registrar_operador():
       val = st.session_state.input_nom_op.strip()
       if val != "":
@@ -1019,6 +1018,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           st.toast(f"Error: {ex}", icon="❌")
       else:
         st.toast("Debe ingresar un nombre válido.", icon="⚠️")
+
 
     col_input, col_btn = st.columns([3, 1], vertical_alignment="bottom")
     with col_input:
@@ -1041,6 +1041,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     lista_ops_del = df_op["nombre"].tolist() if not df_op.empty else []
     options_del = ["-- Seleccione un operador --"] + lista_ops_del
 
+
     def click_eliminar_operador():
       op_seleccionado = st.session_state.get("sel_op_eliminar")
       if op_seleccionado and op_seleccionado != "-- Seleccione un operador --":
@@ -1059,6 +1060,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           st.toast(f"Error al eliminar: {ex}", icon="❌")
       else:
         st.toast("Seleccione un operador válido.", icon="⚠️")
+
 
     col_del_sel, col_del_btn = st.columns(
         [3, 1], vertical_alignment="bottom"
@@ -1082,7 +1084,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         "SELECT id, nombre FROM operadores", conn
     )
     conn.close()
-    st.dataframe(df_op_actualizado, use_container_width=True, hide_index=True)
+    st.dataframe(df_op_actualizado, hide_index=True)
 
   if rol_actual == "TIC":
     with tab4:
@@ -1145,7 +1147,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           "SELECT id, usuario, rol FROM usuarios_sistema", conn
       )
       conn.close()
-      st.dataframe(df_users, use_container_width=True, hide_index=True)
+      st.dataframe(df_users, hide_index=True)
 
       st.write("---")
       st.subheader("Eliminar Usuario del Sistema")
@@ -1158,6 +1160,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           df_users_del["usuario"].tolist() if not df_users_del.empty else []
       )
       options_user_del = ["-- Seleccione un usuario --"] + lista_users_del
+
 
       def click_eliminar_usuario_sis():
         usr_sel = st.session_state.get("sel_user_eliminar")
@@ -1185,6 +1188,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         else:
           st.toast("Seleccione un usuario válido.", icon="⚠️")
 
+
       col_del_u_sel, col_del_u_btn = st.columns(
           [3, 1], vertical_alignment="bottom"
       )
@@ -1203,12 +1207,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
             key="btn_del_user_item",
         )
 
-  if rol_actual == "TIC":
-    tab_cierre_idx = tab5
-  else:
-    tab_cierre_idx = tab5
-
-  with tab_cierre_idx:
+  with tab5:
     st.subheader("Cierre de Proyecto y Reseteo Operativo")
     st.markdown("""
         Utilice esta herramienta al concluir un proyecto de fabricación. 
@@ -1333,13 +1332,13 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
           .sum()
           .reset_index()
       )
-      st.dataframe(df_ins_op, use_container_width=True, hide_index=True)
+      st.dataframe(df_ins_op, hide_index=True)
     else:
       st.info("No hay entregas de insumos registradas todavía.")
 
     st.write("---")
     st.subheader("Registro Diario Detallado")
-    st.dataframe(df_reg, use_container_width=True, hide_index=True)
+    st.dataframe(df_reg, hide_index=True)
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
