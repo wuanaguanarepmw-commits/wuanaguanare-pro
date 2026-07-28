@@ -22,7 +22,7 @@ st.set_page_config(
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL PRO: ALINEACIÓN Y COLORES REALES
+# CONFIGURACIÓN VISUAL PRO: CENTRADO DE LOGO Y LIMPIEZA DE UI
 # =====================================================================
 st.markdown(
     """
@@ -38,37 +38,6 @@ st.markdown(
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Paleta de colores reales e industriales */
-        :root {
-            --primary-red: #E63946;
-            --bg-dark: #0E1117;
-            --card-bg: #161B22;
-            --border-color: #30363D;
-        }
-        
-        /* Estilos limpios y reales para los inputs de acceso */
-        [data-baseweb="input"] {
-            background-color: #1A202C !important;
-            border-color: #2D3748 !important;
-            border-radius: 6px !important;
-        }
-        [data-baseweb="input"]:focus-within {
-            border-color: #E63946 !important;
-            box-shadow: 0 0 0 1px #E63946 !important;
-        }
-        
-        /* Botón principal con el rojo real corporativo */
-        button[kind="primary"] {
-            background-color: #E63946 !important;
-            border: none !important;
-            color: white !important;
-            font-weight: 600 !important;
-            border-radius: 6px !important;
-        }
-        button[kind="primary"]:hover {
-            background-color: #D90429 !important;
-        }
-
         /* Centrado absoluto y perfecto de imágenes en el sidebar */
         section[data-testid="stSidebar"] [data-testid="stImage"] {
             display: flex !important;
@@ -260,12 +229,9 @@ if not st.session_state.autenticado:
         </style>
     """, unsafe_allow_html=True)
 
-    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
+    col_l1, col_l2, col_l3 = st.columns([1.5, 1.2, 1.5])
     with col_l2:
-        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-        
-        # Contenedor unificado para garantizar alineación perfecta con las cajas de texto
-        st.markdown('<div style="width: 100%; max-width: 100%; margin: 0 auto;">', unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
         
         ruta_logo = buscar_logo()
         if ruta_logo:
@@ -273,7 +239,7 @@ if not st.session_state.autenticado:
             st.markdown(
                 f"""
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 12px;">
-                    <img src="data:image/png;base64,{encoded_logo}" style="width: 100%; max-width: 280px; height: auto; display: block; margin: 0 auto; float: none;">
+                    <img src="data:image/png;base64,{encoded_logo}" width="210" style="display: block; margin: 0 auto; float: none;">
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -281,12 +247,12 @@ if not st.session_state.autenticado:
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
-        st.markdown("<p style='text-align: center; color: #9da3af; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 18px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #9da3af; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 15px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
 
-        st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
         if st.button("Iniciar Sesión", type="primary", use_container_width=True):
             conn = get_connection()
             c = conn.cursor()
@@ -303,8 +269,6 @@ if not st.session_state.autenticado:
                 st.rerun()
             else:
                 st.error("Usuario o contraseña incorrectos.")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 def cerrar_y_reiniciar_proyecto(directorio_respaldos="historico_db"):
@@ -769,6 +733,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
     conn.close()
 
     if not df_registros.empty:
+        # Totales Generales (Consumo general y Metros generales de soldadura)
         st.markdown("### 🌐 Totales Generales del Proyecto")
         total_argon_gen = int(df_registros["consumo_argon"].sum())
         total_lineal_gen = float(df_registros["soldadura_lineal"].sum())
@@ -787,6 +752,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
 
         st.markdown("---")
 
+        # Rendimiento Individual por Operador (Argón y Metros de Soldadura)
         st.markdown("### 👤 Rendimiento y Totales por Operador")
         col1, col2 = st.columns(2)
 
@@ -814,6 +780,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
             )
             st.plotly_chart(fig_soldadura_op, use_container_width=True, config={"displayModeBar": False})
 
+        # Tablas de Resumen y Exportación
         st.markdown("---")
         st.markdown("### 📥 Tablas de Resumen y Exportación")
 
