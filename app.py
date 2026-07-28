@@ -7,7 +7,6 @@ import sqlite3
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-import streamlit.components.v1 as components
 
 # Configuración de la página
 st.set_page_config(
@@ -17,15 +16,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Forzar idioma español en el DOM
-components.html(
-    "<script>window.parent.document.documentElement.lang = 'es';</script>",
-    height=0,
-    width=0,
-)
+# Forzar idioma español en el DOM sin advertencias de deprecación
+st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL PRO: OCULTAR MARCA DE AGUA, FOOTER Y ELEMENTOS FIJOS
+# CONFIGURACIÓN VISUAL PRO: OCULTAR MARCA DE AGUA, DEPLOY Y ELEMENTOS FIJOS
 # =====================================================================
 st.markdown(
     """
@@ -53,12 +48,13 @@ st.markdown(
             display: none !important;
         }
         
-        /* Ocultar completamente la insignia "Hosted with Streamlit" y el footer */
+        /* Ocultar completamente elementos de Streamlit Cloud (Deploy, Footer, Menú, Badges) */
         footer { visibility: hidden; display: none !important; }
         #MainMenu { visibility: hidden; display: none !important; }
         [data-testid="stStatusWidget"] { visibility: hidden; display: none !important; }
-        
-        /* Selector avanzado y agresivo para bloquear el badge flotante inferior derecho */
+        .stDeployButton { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+        [data-testid="stToolbar"] { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+        [data-testid="stDecoration"] { display: none !important; }
         div[class*="viewerBadge"] { 
             display: none !important; 
             visibility: hidden !important; 
