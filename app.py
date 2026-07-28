@@ -22,7 +22,7 @@ st.set_page_config(
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL PRO: OCULTAR MARCA DE AGUA, DEPLOY Y ELEMENTOS FIJOS
+# CONFIGURACIÓN VISUAL PRO: CENTRADO DE LOGO Y LIMPIEZA DE UI
 # =====================================================================
 st.markdown(
     """
@@ -38,17 +38,20 @@ st.markdown(
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Centrado absoluto y perfecto de todas las imágenes (logo) */
-        [data-testid="stImage"] {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
+        /* Centrado absoluto y perfecto de todas las imágenes (logo) en body y sidebar */
+        [data-testid="stImage"], section[data-testid="stSidebar"] [data-testid="stImage"] {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }
-        [data-testid="stImage"] img {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+        [data-testid="stImage"] img, section[data-testid="stSidebar"] [data-testid="stImage"] img {
+            display: block !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            float: none !important;
         }
         
         section[data-testid="stSidebar"] {
@@ -741,8 +744,9 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
             st.dataframe(df_diario, hide_index=True, use_container_width=True)
             st.write("---")
             st.subheader("Analítica de Consumo y Producción")
-            col_chart1, col_chart2 = st.columns(2)
             
+            # Fila 1 de gráficos (Argón)
+            col_chart1, col_chart2 = st.columns(2)
             with col_chart1:
                 df_consumo = df_diario.groupby("fecha")["consumo_argon"].sum().reset_index()
                 if not df_consumo.empty:
@@ -764,6 +768,36 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                     fig_soldador.update_traces(width=0.35, textposition='auto')
                     fig_soldador.update_layout(xaxis_title="Operador", yaxis_title="Consumo (PSI)")
                     st.plotly_chart(fig_soldador, use_container_width=True)
+
+            # Fila 2 de gráficos (Metros de Soldadura Lineal y No Lineal) - RESTAURADO
+            st.write("---")
+            col_chart3, col_chart4 = st.columns(2)
+            with col_chart3:
+                df_soldadura_op = df_diario.groupby("soldador")[["soldadura_lineal", "soldadura_no_lineal"]].sum().reset_index()
+                if not df_soldadura_op.empty:
+                    fig_w_op = px.bar(
+                        df_soldadura_op,
+                        x="soldador",
+                        y=["soldadura_lineal", "soldadura_no_lineal"],
+                        title="Metros de Soldadura (Lineal y No Lineal) por Operador",
+                        barmode="group",
+                        text_auto=True
+                    )
+                    fig_w_op.update_layout(xaxis_title="Operador", yaxis_title="Metros (m)")
+                    st.plotly_chart(fig_w_op, use_container_width=True)
+
+            with col_chart4:
+                df_soldadura_date = df_diario.groupby("fecha")[["soldadura_lineal", "soldadura_no_lineal"]].sum().reset_index()
+                if not df_soldadura_date.empty:
+                    fig_w_date = px.line(
+                        df_soldadura_date,
+                        x="fecha",
+                        y=["soldadura_lineal", "soldadura_no_lineal"],
+                        title="Evolución Temporal de Soldadura (Metros)",
+                        markers=True
+                    )
+                    fig_w_date.update_layout(xaxis_title="Fecha / Hora", yaxis_title="Metros (m)")
+                    st.plotly_chart(fig_w_date, use_container_width=True)
                     
             csv_diario = df_diario.to_csv(index=False).encode('utf-8')
             st.download_button("Descargar Reporte Diario (CSV)", csv_diario, "reporte_produccion_diaria.csv", "text/csv", use_container_width=True)
