@@ -22,7 +22,7 @@ st.set_page_config(
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL: PALETA AZUL ESCRITORIO, LOGO Y ANCHOS
+# CONFIGURACIÓN VISUAL: PALETA INDUSTRIAL (ACERO, CARBÓN Y ROJO LOGO)
 # =====================================================================
 st.markdown(
     """
@@ -41,22 +41,23 @@ st.markdown(
             visibility: hidden !important;
             opacity: 0 !important;
             pointer-events: none !important;
+            height: 0 !important;
+            width: 0 !important;
         }
         
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Paleta de colores: Azul Oscuro y Azul Claro estilo App de Escritorio Nativa */
+        /* Paleta de colores: Metalmecánica Industrial (Carbón, Acero y Rojo Corporativo) */
         :root {
-            --bg-deep: #0A1128;
-            --bg-card: #101B3B;
-            --input-bg: #172554;
-            --input-border: #1E3A8A;
-            --primary-blue: #2563EB;
-            --accent-blue: #3B82F6;
-            --light-blue: #60A5FA;
-            --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
+            --bg-deep: #0B0F19;
+            --bg-card: #111827;
+            --input-bg: #1F2937;
+            --input-border: #374151;
+            --primary-red: #DC2626;
+            --accent-red: #EF4444;
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
         }
         
         /* Fondo general de la app */
@@ -94,25 +95,25 @@ st.markdown(
             border-radius: 6px !important;
         }
         [data-baseweb="input"]:focus-within {
-            border-color: var(--accent-blue) !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+            border-color: var(--accent-red) !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3) !important;
         }
         
-        /* Botón principal compacto y centrado */
+        /* Botón principal compacto y centrado en tono Rojo Industrial */
         button[kind="primary"] {
             max-width: 380px !important;
             width: 100% !important;
             margin: 10px auto 0 auto !important;
             display: block !important;
-            background-color: var(--primary-blue) !important;
+            background-color: var(--primary-red) !important;
             border: none !important;
             color: white !important;
             font-weight: 600 !important;
             border-radius: 6px !important;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
         }
         button[kind="primary"]:hover {
-            background-color: #1D4ED8 !important;
+            background-color: #B91C1C !important;
         }
 
         section[data-testid="stSidebar"] {
@@ -137,6 +138,25 @@ st.markdown(
             padding-bottom: 1rem !important;
         }
     </style>
+    
+    <!-- Script de seguridad para eliminar permanentemente el botón Manage App -->
+    <script>
+        function eliminarManageApp() {
+            const elements = document.querySelectorAll('*');
+            elements.forEach(el => {
+                if (el.innerText && el.innerText.includes('Manage app')) {
+                    let parent = el.closest('div[style*="position: fixed"]') || el.parentElement;
+                    if (parent) {
+                        parent.style.display = 'none';
+                        parent.style.visibility = 'hidden';
+                    }
+                }
+            });
+            const badge = document.querySelector('[data-testid="manage-app-button"]');
+            if (badge) badge.remove();
+        }
+        setInterval(eliminarManageApp, 400);
+    </script>
 """,
     unsafe_allow_html=True,
 )
@@ -296,7 +316,7 @@ if not st.session_state.autenticado:
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
-        st.markdown("<p style='text-align: center; color: #94A3B8; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #9CA3AF; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
