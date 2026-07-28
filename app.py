@@ -25,7 +25,7 @@ components.html(
 )
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL PRO: OCULTAR AVISO "PRESS ENTER" Y BARRA FIJA
+# CONFIGURACIÓN VISUAL PRO: OCULTAR MARCA DE AGUA, FOOTER Y ELEMENTOS FIJOS
 # =====================================================================
 st.markdown(
     """
@@ -52,6 +52,12 @@ st.markdown(
         section[data-testid="stSidebar"] hr {
             display: none !important;
         }
+        /* Ocultar completamente la insignia "Hosted with Streamlit" y el footer */
+        footer {visibility: hidden; display: none !important;}
+        .viewerBadge_container__1QSob {display: none !important;}
+        [data-testid="stStatusWidget"] {visibility: hidden; display: none !important;}
+        #MainMenu {visibility: hidden;}
+        
         /* Ocultar el aviso de "Press Enter to apply" en todos los inputs */
         [data-testid="InputInstructions"] {
             display: none !important;
@@ -292,7 +298,7 @@ if not st.session_state.autenticado:
         st.session_state.rol = resultado_user[0]
         st.rerun()
       else:
-        st.error("⚠️ Usuario o contraseña incorrectos.")
+        st.error("Usuario o contraseña incorrectos.")
 
   st.stop()
 
@@ -385,20 +391,20 @@ else:
 menu = st.sidebar.radio("Navegación", opciones_menu)
 
 st.sidebar.write("---")
-st.sidebar.markdown(f"👤 Conectado como: **{rol_actual}**")
+st.sidebar.markdown(f"Conectado como: **{rol_actual}**")
 if st.sidebar.button(
-    "🚪 Cerrar Sesión", use_container_width=True, type="secondary"
+    "Cerrar Sesión", use_container_width=True, type="secondary"
 ):
   st.session_state.autenticado = False
   st.session_state.rol = None
   st.rerun()
 
 st.sidebar.write("---")
-st.sidebar.subheader("🔒 Seguridad de Datos")
+st.sidebar.subheader("Seguridad de Datos")
 if os.path.exists("wuanaguanare_db.sqlite"):
   with open("wuanaguanare_db.sqlite", "rb") as db_file:
     st.sidebar.download_button(
-        label="📥 Descargar Respaldo (Backup)",
+        label="Descargar Respaldo (Backup)",
         data=db_file,
         file_name=(
             "backup_wuanaguanare_"
@@ -418,7 +424,7 @@ df_stock_check = pd.read_sql_query(
 conn.close()
 
 if not df_stock_check.empty:
-  st.sidebar.error("⚠️ **¡Atención! Insumos en Stock Crítico:**")
+  st.sidebar.error("¡Atención! Insumos en Stock Crítico:")
   for _, row in df_stock_check.iterrows():
     st.sidebar.markdown(
         f"- **{row['insumo']}**: {row['cantidad']} {row['unidad']} (Mín:"
@@ -429,7 +435,7 @@ if not df_stock_check.empty:
 # MÓDULO 1: REGISTRO DIARIO
 # =====================================================================
 if menu == "REGISTRO DIARIO GAS ARGÓN":
-  st.header("📋 Registro Diario Gas Argón y Producción")
+  st.header("Registro Diario Gas Argón y Producción")
 
   conn = get_connection()
   cilindros_df = pd.read_sql_query(
@@ -460,7 +466,7 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
   )
 
   cilindro_activo = st.selectbox(
-      "🧪 Cilindro Activo", options=options_cilindros
+      "Cilindro Activo", options=options_cilindros
   )
 
   if cilindro_activo and cilindro_activo not in [
@@ -469,16 +475,16 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
   ]:
     presion_actual_cil = dict_presiones.get(cilindro_activo, 0)
     st.info(
-        f"🧪 Argón disponible en **{cilindro_activo}**:"
+        f"Argón disponible en **{cilindro_activo}**:"
         f" **{presion_actual_cil} PSI**"
     )
 
   with st.form(key="form_registro_diario", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1:
-      soldador = st.selectbox("👤 Soldador / Operador", options=options_operadores)
+      soldador = st.selectbox("Soldador / Operador", options=options_operadores)
       orden_trabajo = st.text_input(
-          "🏷️ Orden de Trabajo / Proyecto (Ej: OT-2026-04)", value="GENERAL"
+          "Orden de Trabajo / Proyecto (Ej: OT-2026-04)", value="GENERAL"
       )
       p_cierre = st.number_input(
           "Presión Cierre (PSI)", min_value=0, value=0
@@ -504,20 +510,20 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
           "Sin cilindros registrados",
       ]:
         st.error(
-            "⚠️ Debe seleccionar un cilindro válido en la lista desplegable."
+            "Debe seleccionar un cilindro válido en la lista desplegable."
         )
       elif not soldador or soldador in [
           "-- Seleccione un operador --",
           "Sin operadores registrados",
       ]:
         st.error(
-            "⚠️ Debe seleccionar un operador válido en la lista desplegable."
+            "Debe seleccionar un operador válido en la lista desplegable."
         )
       else:
         p_inicio_actual = int(dict_presiones.get(cilindro_activo, 0))
         if p_cierre > p_inicio_actual:
           st.error(
-              f"⚠️ La presión de cierre ({p_cierre} PSI) no puede ser mayor que"
+              f"La presión de cierre ({p_cierre} PSI) no puede ser mayor que"
               f" la presión inicial disponible ({p_inicio_actual} PSI)."
           )
         else:
@@ -554,7 +560,7 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
                   (int(p_cierre), cilindro_activo),
               )
             st.session_state["toast_jornada"] = (
-                f"✅ Jornada guardada. OT: {orden_trabajo.upper()} | Consumo"
+                f"Jornada guardada. OT: {orden_trabajo.upper()} | Consumo"
                 f" argón: {consumo_argon} PSI"
             )
             st.rerun()
@@ -571,22 +577,22 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
 # MÓDULO 2: GESTIÓN DE PLANTA Y PROYECTOS
 # =====================================================================
 elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
-  st.header("📦 Gestión de Planta, Insumos y Accesos del Sistema")
+  st.header("Gestión de Planta, Insumos y Accesos del Sistema")
 
   if rol_actual == "TIC":
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "🛢️ Cilindros",
-        "🔧 Inventario e Insumos",
-        "👥 Operadores",
-        "🔐 Gestión de Usuarios",
-        "🏁 Cierre de Proyecto",
+        "Cilindros",
+        "Inventario e Insumos",
+        "Operadores",
+        "Gestión de Usuarios",
+        "Cierre de Proyecto",
     ])
   else:
     tab1, tab2, tab3, tab5 = st.tabs([
-        "🛢️ Cilindros",
-        "🔧 Inventario e Insumos",
-        "👥 Operadores",
-        "🏁 Cierre de Proyecto",
+        "Cilindros",
+        "Inventario e Insumos",
+        "Operadores",
+        "Cierre de Proyecto",
     ])
 
   with tab1:
@@ -621,12 +627,12 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           )
           st.rerun()
         except sqlite3.IntegrityError:
-          st.toast("⚠️ Este cilindro ya se encuentra registrado.", icon="⚠️")
+          st.toast("Este cilindro ya se encuentra registrado.", icon="⚠️")
         except Exception as ex:
           st.toast(f"Error al registrar cilindro: {ex}", icon="❌")
       else:
         st.toast(
-            "⚠️ Debe ingresar un nombre o código de cilindro válido.", icon="⚠️"
+            "Debe ingresar un nombre o código de cilindro válido.", icon="⚠️"
         )
 
     st.write("---")
@@ -656,7 +662,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         except Exception as ex:
           st.toast(f"Error al eliminar: {ex}", icon="❌")
       else:
-        st.toast("⚠️ Seleccione un cilindro válido.", icon="⚠️")
+        st.toast("Seleccione un cilindro válido.", icon="⚠️")
 
     col_del_cil_sel, col_del_cil_btn = st.columns(
         [3, 1], vertical_alignment="bottom"
@@ -683,7 +689,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     st.dataframe(df_cil_actualizado, use_container_width=True, hide_index=True)
 
   with tab2:
-    st.subheader("🔧 Gestión de Inventario e Insumos")
+    st.subheader("Gestión de Inventario e Insumos")
     unidad_seleccionada = st.selectbox(
         "Unidad de Medida Principal",
         options=["kg", "g", "Unidad", "Litros", "Metros", "Pares"],
@@ -724,9 +730,9 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
 
       if submitted:
         if cod_ins.strip() == "":
-          st.error("⚠️ Debe ingresar un código o lote único.")
+          st.error("Debe ingresar un código o lote único.")
         elif nombre_insumo.strip() == "":
-          st.error("⚠️ Debe ingresar el nombre del artículo.")
+          st.error("Debe ingresar el nombre del artículo.")
         else:
           try:
             conn = get_connection()
@@ -778,10 +784,10 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     if not df_inv.empty:
       st.dataframe(df_inv, use_container_width=True, hide_index=True)
     else:
-      st.info("ℹ️ No hay insumos registrados en el inventario.")
+      st.info("No hay insumos registrados en el inventario.")
 
     st.write("---")
-    st.subheader("📤 Registrar Entrega o Asignación de Insumo a Operador")
+    st.subheader("Registrar Entrega o Asignación de Insumo a Operador")
     conn = get_connection()
     df_inv_act = pd.read_sql_query(
         "SELECT codigo, insumo, cantidad, unidad FROM inventario", conn
@@ -872,12 +878,12 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
 
     if insumo_elegido != "-- Seleccione un insumo --":
       st.info(
-          "📦 Stock disponible en almacén: **"
+          "Stock disponible en almacén: **"
           f"{stock_actual} {unidad_art_base}**"
       )
       if cant_a_descontar > stock_actual:
         st.warning(
-            "⚠️ **¡Alerta de Stock Insuficiente!** Estás solicitando"
+            "**¡Alerta de Stock Insuficiente!** Estás solicitando"
             f" {cant_entrega} {unidad_retiro}, pero solo tienes"
             f" **{stock_actual} {unidad_art_base}** disponible."
         )
@@ -889,14 +895,14 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         key="btn_reg_entrega_direct",
     ):
       if insumo_elegido == "-- Seleccione un insumo --":
-        st.error("⚠️ Debe seleccionar un insumo válido.")
+        st.error("Debe seleccionar un insumo válido.")
       elif operador_elegido == "-- Seleccione un operador --":
-        st.error("⚠️ Debe seleccionar un operador válido.")
+        st.error("Debe seleccionar un operador válido.")
       elif cant_entrega <= 0:
-        st.error("⚠️ La cantidad debe ser mayor a cero.")
+        st.error("La cantidad debe ser mayor a cero.")
       elif cant_a_descontar > stock_actual:
         st.error(
-            f"⚠️ Stock insuficiente. Solo tienes {stock_actual}"
+            f"Stock insuficiente. Solo tienes {stock_actual}"
             f" {unidad_art_base} disponible."
         )
       else:
@@ -926,7 +932,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
             )
           conn.close()
           st.toast(
-              f"✅ Entrega de {cant_entrega} {unidad_retiro} de"
+              f"Entrega de {cant_entrega} {unidad_retiro} de"
               f" '{nombre_art_base}' a {operador_elegido} registrada.",
               icon="🚀",
           )
@@ -935,7 +941,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           st.error(f"Error al registrar entrega: {ex}")
 
     st.write("")
-    st.subheader("📋 Historial de Entregas y Retiros")
+    st.subheader("Historial de Entregas y Retiros")
     conn = get_connection()
     df_historial = pd.read_sql_query(
         "SELECT fecha, orden_trabajo, codigo_insumo, insumo, cantidad, unidad,"
@@ -946,10 +952,10 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     if not df_historial.empty:
       st.dataframe(df_historial, use_container_width=True, hide_index=True)
     else:
-      st.info("ℹ️ No hay entregas registradas todavía.")
+      st.info("No hay entregas registradas todavía.")
 
     st.write("---")
-    st.subheader("🗑️ Eliminar Insumo del Inventario")
+    st.subheader("Eliminar Insumo del Inventario")
     options_inv_del = ["-- Seleccione un código de insumo --"] + lista_codigos_inv
 
     def click_eliminar_insumo_inv():
@@ -967,7 +973,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         except Exception as ex:
           st.toast(f"Error al eliminar: {ex}", icon="❌")
       else:
-        st.toast("⚠️ Seleccione un código de insumo válido.", icon="⚠️")
+        st.toast("Seleccione un código de insumo válido.", icon="⚠️")
 
     col_del_inv_sel, col_del_inv_btn = st.columns(
         [3, 1], vertical_alignment="bottom"
@@ -1004,11 +1010,11 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           st.toast(f"Operador {val.upper()} registrado exitosamente.", icon="✅")
           st.session_state.input_nom_op = ""
         except sqlite3.IntegrityError:
-          st.toast("⚠️ Este operador ya se encuentra registrado.", icon="⚠️")
+          st.toast("Este operador ya se encuentra registrado.", icon="⚠️")
         except Exception as ex:
           st.toast(f"Error: {ex}", icon="❌")
       else:
-        st.toast("⚠️ Debe ingresar un nombre válido.", icon="⚠️")
+        st.toast("Debe ingresar un nombre válido.", icon="⚠️")
 
     col_input, col_btn = st.columns([3, 1], vertical_alignment="bottom")
     with col_input:
@@ -1048,7 +1054,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         except Exception as ex:
           st.toast(f"Error al eliminar: {ex}", icon="❌")
       else:
-        st.toast("⚠️ Seleccione un operador válido.", icon="⚠️")
+        st.toast("Seleccione un operador válido.", icon="⚠️")
 
     col_del_sel, col_del_btn = st.columns(
         [3, 1], vertical_alignment="bottom"
@@ -1076,7 +1082,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
 
   if rol_actual == "TIC":
     with tab4:
-      st.subheader("🔐 Administración de Usuarios y Accesos del Sistema")
+      st.subheader("Administración de Usuarios y Accesos del Sistema")
       st.markdown(
           "Crea nuevos usuarios, modifica sus contraseñas o actualiza sus"
           " perfiles de acceso (Roles) de forma dinámica."
@@ -1119,17 +1125,17 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
                 )
               conn.close()
               st.success(
-                  f"✅ Usuario '{nuevo_usuario.strip().lower()}' guardado con"
+                  f"Usuario '{nuevo_usuario.strip().lower()}' guardado con"
                   " éxito."
               )
               st.rerun()
             except Exception as e:
               st.error(f"Error al guardar usuario: {e}")
           else:
-            st.error("⚠️ Debe completar el usuario y la contraseña.")
+            st.error("Debe completar el usuario y la contraseña.")
 
       st.write("---")
-      st.subheader("📋 Usuarios Registrados Actualmente")
+      st.subheader("Usuarios Registrados Actualmente")
       conn = get_connection()
       df_users = pd.read_sql_query(
           "SELECT id, usuario, rol FROM usuarios_sistema", conn
@@ -1138,7 +1144,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
       st.dataframe(df_users, use_container_width=True, hide_index=True)
 
       st.write("---")
-      st.subheader("🗑️ Eliminar Usuario del Sistema")
+      st.subheader("Eliminar Usuario del Sistema")
       conn = get_connection()
       df_users_del = pd.read_sql_query(
           "SELECT usuario FROM usuarios_sistema", conn
@@ -1154,7 +1160,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         if usr_sel and usr_sel != "-- Seleccione un usuario --":
           if usr_sel == "tic":
             st.toast(
-                "⚠️ No se puede eliminar al administrador principal 'tic'.",
+                "No se puede eliminar al administrador principal 'tic'.",
                 icon="⚠️",
             )
           else:
@@ -1173,7 +1179,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
             except Exception as ex:
               st.toast(f"Error al eliminar usuario: {ex}", icon="❌")
         else:
-          st.toast("⚠️ Seleccione un usuario válido.", icon="⚠️")
+          st.toast("Seleccione un usuario válido.", icon="⚠️")
 
       col_del_u_sel, col_del_u_btn = st.columns(
           [3, 1], vertical_alignment="bottom"
@@ -1199,7 +1205,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     tab_cierre_idx = tab5
 
   with tab_cierre_idx:
-    st.subheader("🏁 Cierre de Proyecto y Reseteo Operativo")
+    st.subheader("Cierre de Proyecto y Reseteo Operativo")
     st.markdown("""
         Utilice esta herramienta al concluir un proyecto de fabricación. 
         Esto realiza automáticamente un respaldo histórico, limpia los registros transaccionales operativos, 
@@ -1226,7 +1232,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
 # MÓDULO 3: REPORTES Y ANALÍTICA PRO
 # =====================================================================
 elif menu == "REPORTES Y ANALÍTICA PRO":
-  st.header("📊 Reportes, KPIs y Consumos por Operadores")
+  st.header("Reportes, KPIs y Consumos por Operadores")
 
   conn = get_connection()
   df_reg = pd.read_sql_query("SELECT * FROM registros_diarios", conn)
@@ -1234,7 +1240,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
   conn.close()
 
   if not df_reg.empty or not df_hist.empty:
-    st.subheader("📈 Indicadores Clave de Desempeño (KPIs)")
+    st.subheader("Indicadores Clave de Desempeño (KPIs)")
     kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
     total_metros_lineal = (
@@ -1250,12 +1256,12 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
     kpi4.metric("Jornadas Registradas", f"{total_jornadas}")
 
     st.write("---")
-    st.subheader("👥 Análisis de Consumo y Producción por Operador")
+    st.subheader("Análisis de Consumo y Producción por Operador")
 
     col_op1, col_op2 = st.columns(2)
     with col_op1:
       st.markdown(
-          "##### ⚡ Producción en Soldadura (Metros Lineales por Soldador)"
+          "##### Producción en Soldadura (Metros Lineales por Soldador)"
       )
       if not df_reg.empty:
         df_prod_op = (
@@ -1286,7 +1292,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
         st.info("Sin registros de soldadura.")
 
     with col_op2:
-      st.markdown("##### 🧪 Consumo de Argón (PSI por Soldador)")
+      st.markdown("##### Consumo de Argón (PSI por Soldador)")
       if not df_reg.empty:
         df_argon_op = (
             df_reg.groupby("soldador")["consumo_argon"].sum().reset_index()
@@ -1316,7 +1322,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
         st.info("Sin registros de argón.")
 
     st.write("")
-    st.markdown("##### 📦 Retiros de Insumos de Almacén por Operador")
+    st.markdown("##### Retiros de Insumos de Almacén por Operador")
     if not df_hist.empty:
       df_ins_op = (
           df_hist.groupby(["operador", "insumo"])["cantidad"]
@@ -1328,7 +1334,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
       st.info("No hay entregas de insumos registradas todavía.")
 
     st.write("---")
-    st.subheader("📋 Registro Diario Detallado")
+    st.subheader("Registro Diario Detallado")
     st.dataframe(df_reg, use_container_width=True, hide_index=True)
 
     output = io.BytesIO()
@@ -1341,7 +1347,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
     excel_data = output.getvalue()
 
     st.download_button(
-        label="📥 Descargar Reporte Profesional en Excel (.xlsx)",
+        label="Descargar Reporte Profesional en Excel (.xlsx)",
         data=excel_data,
         file_name=(
             "reporte_wuanaguanare_pro_"
@@ -1354,6 +1360,6 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
     )
   else:
     st.info(
-        "ℹ️ No hay registros guardados todavía. Comienza a registrar jornadas y"
+        "No hay registros guardados todavía. Comienza a registrar jornadas y"
         " entregas en los menús anteriores."
     )
