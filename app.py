@@ -490,7 +490,7 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
         with col1:
             tungstenos = st.number_input("Tungstenos gastados", min_value=0, value=0)
         with col2:
-            st.markdown("")  # Espacio vacío para simetría
+            st.markdown("")  # Espacio vacío para mantener simetría perfecta
 
         st.write("")
         submitted_jornada = st.form_submit_button("Guardar Jornada", type="primary", use_container_width=True)
@@ -543,15 +543,14 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
 
     if rol_actual == "TIC":
         tab1, tab2, tab3, tab4, tab5 = st.tabs(["Cilindros", "Inventario e Insumos", "Operadores", "Gestión de Usuarios", "Cierre de Proyecto"])
-        tab_cierre = tab5
     else:
-        tab1, tab2, tab3, tab4 = st.tabs(["Cilindros", "Inventario e Insumos", "Operadores", "Cierre de Proyecto"])
-        tab_cierre = tab4
+        tab1, tab2, tab3, tab5 = st.tabs(["Cilindros", "Inventario e Insumos", "Operadores", "Cierre de Proyecto"])
 
     # --- TAB 1: CILINDROS ---
     with tab1:
         st.subheader("Control de Cilindros de Argón")
         
+        # Formulario de Registro de Cilindros Alineado en Columnas
         with st.form(key="form_registro_cilindro", clear_on_submit=True):
             col_cil1, col_cil2 = st.columns(2, vertical_alignment="center")
             with col_cil1:
@@ -686,150 +685,118 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
 
         lista_codigos_inv = df_inv_act["codigo"].tolist() if not df_inv_act.empty else []
         options_entrega_inv = ["-- Seleccione un insumo --"] + lista_codigos_inv
-        lista_operadores_ent = df_ops_act["nombre"].tolist() if not df_ops_act.empty else []
-        options_entrega_op = ["-- Seleccione un operador --"] + lista_operadores_ent
+        lista_nombres_ops = df_ops_act["nombre"].tolist() if not df_ops_act.empty else []
+        options_entrega_ops = ["-- Seleccione un operador --"] + lista_nombres_ops
 
-        with st.form(key="form_entrega_insumo", clear_on_submit=True):
-            col_ent1, col_ent2, col_ent3 = st.columns(3, vertical_alignment="center")
-            with col_ent1:
-                insumo_sel = st.selectbox("Insumo a Entregar", options=options_entrega_inv)
-            with col_ent2:
-                operador_sel = st.selectbox("Operador Receptor", options=options_entrega_op)
-            with col_ent3:
-                cant_entregar = st.number_input("Cantidad a Descontar", min_value=0.0, value=0.0, format="%.2f")
-            
-            ot_entrega = st.text_input("Orden de Trabajo / Proyecto (Ej: OT-2026-04)", value="GENERAL")
-            
-            submitted_entrega = st.form_submit_button("Registrar Entrega", type="primary", use_container_width=True)
-            
-            if submitted_entrega:
-                if insumo_sel == "-- Seleccione un insumo --" or operador_sel == "-- Seleccione un operador --":
-                    st.error("Debe seleccionar un insumo y un operador válidos.")
-                elif cant_entregar <= 0:
-                    st.error("La cantidad a entregar debe ser mayor a cero.")
-                else:
+        insumo_elegido = st.selectbox("Insumo del Inventario", options=options_entrega_inv, key="select_insumo_entrega")
+        
+        stock_actual = 0.0
+        unidad_art_base = "kg"
+        if insumo_elegido != "-- Seleccione un insumo --":
+            conn = get_connection()
+            c = conn.cursor()
+            c.execute("SELECT insumo, cantidad, unidad FROM inventario WHERE codigo = ?", (insumo_elegido,))
+            res_u = c.fetchone()
+            conn.close()
+            if res_u:
+                nombre_art_base, stock_actual, unidad_art_base = res_u
+
+        if unidad_art_base == "kg": unidades_posibles_retiro = ["g", "kg"]
+        elif unidad_art_base == "g": unidades_posibles_retiro = ["g", "kg"]
+        elif unidad_art_base in ["Metros", "m"]: unidades_posibles_retiro = ["cm", "Metros"]
+        elif unidad_art_base in ["Litros", "l"]: unidades_posibles_retiro = ["ml", "Litros"]
+        else: unidades_posibles_retiro = [unidad_art_base]
+
+        col_ent1, col_ent2, col_ent3, col_ent4 = st.columns(4, vertical_alignment="center")
+        with col_ent1:
+            operador_elegido = st.selectbox("Operador Asignado", options=options_entrega_ops, key="ent_op")
+        with col_ent2:
+            ot_entrega = st.text_input("Orden de Trabajo / OT", value="GENERAL", key="ent_ot")
+        with col_ent3:
+            unidad_retiro = st.selectbox("Unidad de Retiro", options=unidades_posibles_retiro, key="ent_unidad")
+        with col_ent4:
+            if unidad_retiro in ["Unidad", "Pares"]:
+                cant_entrega = st.number_input("Cantidad", min_value=0, value=0, step=1, format="%d", key="ent_cant_int")
+            else:
+                cant_entrega = st.number_input("Cantidad", min_value=0.0, value=0.0, format="%.2f", key="ent_cant_float")
+
+        cant_a_descontar = float(cant_entrega)
+        if unidad_art_base == "kg" and unidad_retiro == "g": cant_a_descontar = float(cant_entrega) / 1000.0
+        elif unidad_art_base == "g" and unidad_retiro == "kg": cant_a_descontar = float(cant_entrega) * 1000.0
+        elif unidad_art_base in ["Metros", "m"] and unidad_retiro == "cm": cant_a_descontar = float(cant_entrega) / 100.0
+        elif unidad_art_base in ["Litros", "l"] and unidad_retiro == "ml": cant_a_descontar = float(cant_entrega) / 1000.0
+
+        if insumo_elegido != "-- Seleccione un insumo --":
+            st.info(f"Stock disponible en almacén: **{stock_actual} {unidad_art_base}**")
+            if cant_a_descontar > stock_actual:
+                st.warning(f"**¡Alerta de Stock Insuficiente!** Estás solicitando {cant_entrega} {unidad_retiro}, pero solo tienes **{stock_actual} {unidad_art_base}** disponible.")
+
+        if st.button("Registrar Entrega", type="primary", use_container_width=True, key="btn_reg_entrega_direct"):
+            if insumo_elegido == "-- Seleccione un insumo --": st.error("Debe seleccionar un insumo válido.")
+            elif operador_elegido == "-- Seleccione un operador --": st.error("Debe seleccionar un operador válido.")
+            elif cant_entrega <= 0: st.error("La cantidad debe ser mayor a cero.")
+            elif cant_a_descontar > stock_actual: st.error(f"Stock insuficiente. Solo tienes {stock_actual} {unidad_art_base} disponible.")
+            else:
+                try:
                     conn = get_connection()
-                    c = conn.cursor()
-                    c.execute("SELECT cantidad, unidad, insumo FROM inventario WHERE codigo = ?", (insumo_sel,))
-                    res_inv = c.fetchone()
-                    if not res_inv:
-                        st.error("El insumo seleccionado ya no existe en el inventario.")
-                        conn.close()
-                    else:
-                        stock_actual, unidad_ins, nombre_ins = res_inv
-                        if cant_entregar > stock_actual:
-                            st.error(f"Stock insuficiente. Disponible: {stock_actual} {unidad_ins}")
-                            conn.close()
-                        else:
-                            try:
-                                with conn:
-                                    c.execute("UPDATE inventario SET cantidad = cantidad - ? WHERE codigo = ?", (cant_entregar, insumo_sel))
-                                    c.execute(
-                                        """INSERT INTO historial_entregas (fecha, codigo_insumo, insumo, cantidad, unidad, operador, orden_trabajo)
-                                           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                                        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), insumo_sel, nombre_ins, float(cant_entregar), unidad_ins, operador_sel, ot_entrega.strip().upper())
-                                    )
-                                st.session_state["toast_entrega"] = f"Entrega registrada: {cant_entregar} {unidad_ins} de '{nombre_ins}' a {operador_sel}."
-                                st.rerun()
-                            except Exception as ex:
-                                st.error(f"Error al registrar la entrega: {ex}")
-                            finally:
-                                conn.close()
+                    with conn:
+                        c = conn.cursor()
+                        nuevo_stock = stock_actual - cant_a_descontar
+                        c.execute("UPDATE inventario SET cantidad = ? WHERE codigo = ?", (nuevo_stock, insumo_elegido))
+                        c.execute(
+                            """INSERT INTO historial_entregas (fecha, codigo_insumo, insumo, cantidad, unidad, operador, orden_trabajo)
+                               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                            (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), insumo_elegido, nombre_art_base, float(cant_entrega), unidad_retiro, operador_elegido, ot_entrega.strip().upper()),
+                        )
+                    conn.close()
+                    st.session_state["toast_entrega"] = f"Entrega de {cant_entrega} {unidad_retiro} de '{nombre_art_base}' a {operador_elegido} registrada con éxito."
+                    st.rerun()
+                except Exception as ex:
+                    st.error(f"Error al registrar la entrega: {ex}")
 
         if "toast_entrega" in st.session_state:
-            st.toast(st.session_state["toast_entrega"], icon="🚀")
+            st.toast(st.session_state["toast_entrega"], icon="✅")
             del st.session_state["toast_entrega"]
-
-        st.write("---")
-        st.subheader("Historial de Entregas de Insumos")
-        conn = get_connection()
-        df_hist_entregas = pd.read_sql_query("SELECT fecha, codigo_insumo, insumo, cantidad, unidad, operador, orden_trabajo FROM historial_entregas ORDER BY id DESC", conn)
-        conn.close()
-        if not df_hist_entregas.empty:
-            st.dataframe(df_hist_entregas, hide_index=True)
-        else:
-            st.info("No hay registros de entregas de insumos.")
 
     # --- TAB 3: OPERADORES ---
     with tab3:
         st.subheader("Gestión de Operadores y Soldadores")
-        
-        with st.form(key="form_operador", clear_on_submit=True):
-            nombre_operador = st.text_input("Nombre del Operador o Soldador")
-            submitted_op = st.form_submit_button("Registrar Operador", type="primary", use_container_width=True)
-            
-            if submitted_op:
-                if nombre_operador.strip() != "":
-                    try:
-                        conn = get_connection()
-                        with conn:
-                            c = conn.cursor()
-                            c.execute("INSERT INTO operadores (nombre) VALUES (?)", (nombre_operador.strip().upper(),))
-                        conn.close()
-                        st.toast(f"Operador {nombre_operador.strip().upper()} registrado exitosamente.", icon="✅")
-                        st.rerun()
-                    except sqlite3.IntegrityError:
-                        st.toast("Este operador ya está registrado.", icon="⚠️")
-                    except Exception as ex:
-                        st.toast(f"Error al registrar operador: {ex}", icon="❌")
-                else:
-                    st.toast("Debe ingresar un nombre válido.", icon="⚠️")
-
-        st.write("---")
-        st.subheader("Eliminar Operador")
-        conn = get_connection()
-        df_ops = pd.read_sql_query("SELECT id, nombre FROM operadores", conn)
-        conn.close()
-
-        lista_ops_del = df_ops["nombre"].tolist() if not df_ops.empty else []
-        options_ops_del = ["-- Seleccione un operador --"] + lista_ops_del
-
-        def click_eliminar_operador():
-            op_seleccionado = st.session_state.get("sel_op_eliminar")
-            if op_seleccionado and op_seleccionado != "-- Seleccione un operador --":
+        nombre_operador = st.text_input("Nombre del Operador o Soldador", key="input_nom_operador")
+        if st.button("Registrar Operador", key="btn_reg_operador"):
+            if nombre_operador.strip() != "":
                 try:
                     conn = get_connection()
                     with conn:
-                        conn.execute("DELETE FROM operadores WHERE nombre = ?", (op_seleccionado,))
+                        c = conn.cursor()
+                        c.execute("INSERT INTO operadores (nombre) VALUES (?)", (nombre_operador.strip().upper(),))
                     conn.close()
-                    st.toast(f"Operador {op_seleccionado} eliminado exitosamente.", icon="✅")
+                    st.toast(f"Operador {nombre_operador.strip().upper()} registrado.", icon="✅")
+                    st.rerun()
+                except sqlite3.IntegrityError:
+                    st.toast("Este operador ya está registrado.", icon="⚠️")
                 except Exception as ex:
-                    st.toast(f"Error al eliminar: {ex}", icon="❌")
+                    st.toast(f"Error: {ex}", icon="❌")
             else:
-                st.toast("Seleccione un operador válido.", icon="⚠️")
+                st.toast("Ingrese un nombre válido.", icon="⚠️")
 
-        col_del_op_sel, col_del_op_btn = st.columns([3, 1], vertical_alignment="bottom")
-        with col_del_op_sel:
-            st.selectbox("Seleccionar Operador", options=options_ops_del, key="sel_op_eliminar")
-        with col_del_op_btn:
-            st.button("Eliminar", type="secondary", use_container_width=True, on_click=click_eliminar_operador, key="btn_del_operador")
-
-        st.write("")
+        st.write("---")
         conn = get_connection()
-        df_ops_actualizado = pd.read_sql_query("SELECT * FROM operadores", conn)
+        df_ops = pd.read_sql_query("SELECT id, nombre FROM operadores", conn)
         conn.close()
-        st.dataframe(df_ops_actualizado, hide_index=True)
+        st.dataframe(df_ops, hide_index=True)
 
     # --- TAB 4: GESTIÓN DE USUARIOS (Solo TIC) ---
     if rol_actual == "TIC":
         with tab4:
-            st.subheader("Gestión de Usuarios del Sistema y Roles")
-            
-            with st.form(key="form_nuevo_usuario", clear_on_submit=True):
-                col_u1, col_u2, col_u3 = st.columns(3, vertical_alignment="center")
-                with col_u1:
-                    nuevo_usuario = st.text_input("Nombre de Usuario")
-                with col_u2:
-                    nuevo_password = st.text_input("Contraseña", type="password")
-                with col_u3:
-                    nuevo_rol = st.selectbox("Rol del Sistema", options=["TIC", "Gerencia", "Almacén", "Seguimiento"])
-                
-                submitted_user = st.form_submit_button("Crear / Actualizar Usuario", type="primary", use_container_width=True)
-                
-                if submitted_user:
-                    if not nuevo_usuario.strip() or not nuevo_password.strip():
-                        st.error("Debe completar el usuario y la contraseña.")
-                    else:
+            st.subheader("Control de Usuarios y Credenciales del Sistema")
+            with st.form("form_nuevo_usuario"):
+                nuevo_user = st.text_input("Nombre de Usuario").strip().lower()
+                nuevo_pass = st.text_input("Contraseña", type="password")
+                nuevo_rol = st.selectbox("Rol del Sistema", options=["TIC", "Gerencia", "Almacén", "Seguimiento"])
+                btn_crear_user = st.form_submit_button("Crear / Actualizar Usuario", type="primary")
+
+                if btn_crear_user:
+                    if nuevo_user and nuevo_pass:
                         try:
                             conn = get_connection()
                             with conn:
@@ -837,90 +804,162 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
                                 c.execute(
                                     """INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?, ?)
                                        ON CONFLICT(usuario) DO UPDATE SET password = excluded.password, rol = excluded.rol""",
-                                    (nuevo_usuario.strip().lower(), nuevo_password.strip(), nuevo_rol)
+                                    (nuevo_user, nuevo_pass, nuevo_rol)
                                 )
                             conn.close()
-                            st.toast(f"Usuario '{nuevo_usuario.strip().lower()}' guardado con éxito.", icon="✅")
-                            st.rerun()
+                            st.success(f"Usuario '{nuevo_user}' configurado correctamente con rol '{nuevo_rol}'.")
                         except Exception as ex:
                             st.error(f"Error al guardar usuario: {ex}")
+                    else:
+                        st.error("Complete el usuario y la contraseña.")
 
             st.write("---")
-            st.subheader("Usuarios Registrados en el Sistema")
             conn = get_connection()
-            df_usuarios = pd.read_sql_query("SELECT id, usuario, rol FROM usuarios_sistema", conn)
+            df_users = pd.read_sql_query("SELECT id, usuario, rol FROM usuarios_sistema", conn)
             conn.close()
-            st.dataframe(df_usuarios, hide_index=True)
+            st.dataframe(df_users, hide_index=True)
 
-    # --- CIERRE DE PROYECTO ---
-    with tab_cierre:
-        st.subheader("Cierre de Ciclo / Proyecto Industrial")
-        st.warning("⚠️ Esta acción archivará la base de datos actual en la carpeta de respaldos y restablecerá los registros diarios e historiales transaccionales para iniciar un nuevo ciclo de producción.")
-
-        if rol_actual != "TIC":
-            st.info("Solo el rol **TIC** tiene permisos para ejecutar el cierre y reinicio del proyecto.")
-        else:
-            if st.button("Ejecutar Cierre y Reinicio de Proyecto", type="primary", use_container_width=True):
-                exito, mensaje = cerrar_y_reiniciar_proyecto()
-                if exito:
-                    st.success(mensaje)
-                    st.balloons()
-                else:
-                    st.error(mensaje)
+    # --- TAB 5: CIERRE DE PROYECTO ---
+    with tab5:
+        st.subheader("Cierre y Restablecimiento de Proyecto")
+        st.warning("⚠️ **Zona de Cierre:** Esta acción genera un respaldo automático con base de datos histórica comprimida y reinicia los contadores transaccionales (Registros diarios e historial de entregas) para iniciar un nuevo proyecto o ciclo de fabricación.")
+        
+        confirmar_cierre = st.checkbox("Confirmo que deseo cerrar el proyecto actual y vaciar los registros transaccionales")
+        if st.button("Finalizar y Reiniciar Proyecto", type="primary", disabled=not confirmar_cierre):
+            exito, mensaje = cerrar_y_reiniciar_proyecto()
+            if exito:
+                st.success(mensaje)
+                st.balloons()
+            else:
+                st.error(mensaje)
 
 # =====================================================================
 # MÓDULO 3: REPORTES Y ANALÍTICA PRO
 # =====================================================================
 elif menu == "REPORTES Y ANALÍTICA PRO":
-    st.header("Reportes Gerenciales y Analítica de Producción")
+    st.header("📊 Reportes y Analítica Pro — Wuanaguanare")
 
     conn = get_connection()
-    df_reg = pd.read_sql_query("SELECT * FROM registros_diarios", conn)
+    df_registros = pd.read_sql_query("SELECT * FROM registros_diarios", conn)
     conn.close()
 
-    if df_reg.empty:
-        st.info("No hay registros de producción y consumo de argón para analizar.")
-    else:
-        # Métricas principales
-        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    if not df_registros.empty:
+        st.markdown("### 🌐 Totales Generales del Proyecto")
+        total_argon_gen = int(df_registros["consumo_argon"].sum())
+        total_lineal_gen = float(df_registros["soldadura_lineal"].sum())
+        total_nolineal_gen = float(df_registros["soldadura_no_lineal"].sum())
+        total_punteos_gen = int(df_registros["punteos"].sum())
+
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4, vertical_alignment="center")
         with col_m1:
-            st.metric("Consumo Total Argón", f"{df_reg['consumo_argon'].sum():,} PSI")
+            st.metric("Argón General", f"{total_argon_gen} PSI")
         with col_m2:
-            st.metric("Soldadura Lineal Total", f"{df_reg['soldadura_lineal'].sum():,.2f} m")
+            st.metric("Soldadura Lineal Total", f"{total_lineal_gen:.2f} m")
         with col_m3:
-            st.metric("Varilla Gastada Est.", f"{df_reg['varilla_gastada'].sum():,.2f} kg")
+            st.metric("Soldadura No Lineal Total", f"{total_nolineal_gen:.2f} m")
         with col_m4:
-            st.metric("Total Punteos", f"{df_reg['punteos'].sum():,}")
+            st.metric("Punteos Totales", f"{total_punteos_gen}")
 
-        st.write("---")
+        st.markdown("---")
 
-        # Gráficos Analíticos con Plotly
-        col_g1, col_g2 = st.columns(2)
+        st.markdown("### 👤 Rendimiento y Totales por Operador")
+        col1, col2 = st.columns(2, vertical_alignment="center")
 
-        with col_g1:
-            st.subheader("Consumo de Argón por Soldador")
-            df_soldador = df_reg.groupby("soldador")["consumo_argon"].sum().reset_index()
-            fig_soldador = px.bar(df_soldador, x="soldador", y="consumo_argon", color="soldador", title="Consumo Total de Argón (PSI) por Soldador")
-            fig_soldador.update_layout(plot_bgcolor="#111827", paper_bgcolor="#0B0F19", font_color="#F9FAFB")
-            st.plotly_chart(fig_soldador, use_container_width=True)
+        with col1:
+            df_argon_op = df_registros.groupby("soldador")["consumo_argon"].sum().reset_index()
+            fig_argon_op = px.bar(
+                df_argon_op,
+                x="soldador",
+                y="consumo_argon",
+                color="soldador",
+                title="Consumo Total de Argón por Operador (PSI)",
+                labels={"consumo_argon": "Total PSI", "soldador": "Operador"},
+                template="plotly_dark"
+            )
+            fig_argon_op.update_layout(
+                paper_bgcolor="#111827",
+                plot_bgcolor="#111827",
+                font_color="#F9FAFB",
+                title_font_color="#F9FAFB"
+            )
+            st.plotly_chart(fig_argon_op, use_container_width=True, config={"displayModeBar": False})
 
-        with col_g2:
-            st.subheader("Producción por Orden de Trabajo")
-            df_ot = df_reg.groupby("orden_trabajo")["soldadura_lineal"].sum().reset_index()
-            fig_ot = px.pie(df_ot, names="orden_trabajo", values="soldadura_lineal", title="Metros de Soldadura Lineal por OT", hole=0.4)
-            fig_ot.update_layout(plot_bgcolor="#111827", paper_bgcolor="#0B0F19", font_color="#F9FAFB")
-            st.plotly_chart(fig_ot, use_container_width=True)
+        with col2:
+            df_soldadura_op = df_registros.groupby("soldador")[["soldadura_lineal", "soldadura_no_lineal"]].sum().reset_index()
+            fig_soldadura_op = px.bar(
+                df_soldadura_op,
+                x="soldador",
+                y=["soldadura_lineal", "soldadura_no_lineal"],
+                barmode="group",
+                title="Metros de Soldadura por Operador",
+                labels={"value": "Metros (m)", "soldador": "Operador", "variable": "Tipo de Soldadura"},
+                template="plotly_dark"
+            )
+            fig_soldadura_op.update_layout(
+                paper_bgcolor="#111827",
+                plot_bgcolor="#111827",
+                font_color="#F9FAFB",
+                title_font_color="#F9FAFB"
+            )
+            st.plotly_chart(fig_soldadura_op, use_container_width=True, config={"displayModeBar": False})
 
-        st.write("---")
-        st.subheader("Tabla Detallada de Registros Diarios")
-        st.dataframe(df_reg, hide_index=True)
+        st.markdown("---")
+        st.markdown("### 📥 Tablas de Resumen y Exportación")
 
-        # Botón de descarga de reporte en CSV
-        csv_data = df_reg.to_csv(index=False).encode("utf-8")
+        st.markdown("#### Resumen Individual (Por Operador)")
+        df_individual = df_registros.groupby("soldador").agg({
+            "consumo_argon": "sum",
+            "soldadura_lineal": "sum",
+            "soldadura_no_lineal": "sum",
+            "punteos": "sum",
+            "tungstenos": "sum",
+            "varilla_gastada": "sum"
+        }).reset_index()
+        
+        df_individual.columns = [
+            "Operador",
+            "Total Argón (PSI)",
+            "Metros Lineales",
+            "Metros No Lineales",
+            "Total Punteos",
+            "Tungstenos Gastados",
+            "Varilla Gastada (kg)"
+        ]
+        st.dataframe(df_individual, use_container_width=True)
+
+        st.markdown("#### Resumen General Consolidado")
+        totales_generales = pd.DataFrame({
+            "Métrica Global": [
+                "Consumo Total de Argón (PSI)",
+                "Total Metros Lineales",
+                "Total Metros No Lineales",
+                "Total Punteos Realizados",
+                "Total Tungstenos Gastados",
+                "Total Varilla Estimada (kg)"
+            ],
+            "Valor Total": [
+                total_argon_gen,
+                total_lineal_gen,
+                total_nolineal_gen,
+                total_punteos_gen,
+                int(df_registros["tungstenos"].sum()),
+                float(df_registros["varilla_gastada"].sum()),
+            ],
+        })
+        st.dataframe(totales_generales, use_container_width=True)
+
+        def convertir_a_csv(df):
+            return df.to_csv(index=False).encode("utf-8")
+
+        csv_reporte = convertir_a_csv(df_registros)
+
         st.download_button(
-            label="Descargar Reporte Completo en CSV",
-            data=csv_data,
-            file_name=f"reporte_produccion_wuanaguanare_{datetime.now().strftime('%Y%m%d')}.csv",
+            label="📥 Descargar Reporte Completo del Proyecto (CSV)",
+            data=csv_reporte,
+            file_name=f"reporte_final_wuanaguanare_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
-            use_container_width=True,
+            help="Descarga la base de datos completa con registros detallados y sumas consolidadas.",
+            use_container_width=True
         )
+    else:
+        st.info("No hay registros cargados para este proyecto todavía. Ingrese datos en el módulo de Registro Diario.")
