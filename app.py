@@ -22,7 +22,7 @@ st.set_page_config(
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL PRO: ELIMINACIÓN DE PUBLICIDAD Y ALINEACIÓN TOTAL
+# CONFIGURACIÓN VISUAL PRO: ELIMINACIÓN DE PUBLICIDAD Y LOGO CONTROLADO
 # =====================================================================
 st.markdown(
     """
@@ -35,8 +35,8 @@ st.markdown(
         [data-testid="stSidebarCollapseButton"], 
         [data-testid="collapsedControl"] { display: none !important; }
         
-        /* Ocultar completamente la insignia flotante / publicidad de Streamlit */
-        .viewerBadge, div[class*="viewerBadge"], [data-testid="stStatusWidget"], iframe[title="streamlit-badge"] {
+        /* Ocultar completamente insignia, barra flotante y botón Manage app de Streamlit */
+        .viewerBadge, div[class*="viewerBadge"], [data-testid="stStatusWidget"], iframe[title="streamlit-badge"], [data-testid="manage-app-button"] {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
@@ -46,7 +46,7 @@ st.markdown(
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Paleta de colores reales e industriales */
+        /* Paleta de colores industriales */
         :root {
             --primary-red: #E63946;
             --bg-dark: #0E1117;
@@ -54,7 +54,7 @@ st.markdown(
             --border-color: #30363D;
         }
         
-        /* Estilos limpios y reales para los inputs de acceso */
+        /* Estilos limpios para los inputs de acceso */
         [data-baseweb="input"] {
             background-color: #1A202C !important;
             border-color: #2D3748 !important;
@@ -65,7 +65,7 @@ st.markdown(
             box-shadow: 0 0 0 1px #E63946 !important;
         }
         
-        /* Botón principal con el rojo real corporativo */
+        /* Botón principal */
         button[kind="primary"] {
             background-color: #E63946 !important;
             border: none !important;
@@ -77,22 +77,22 @@ st.markdown(
             background-color: #D90429 !important;
         }
 
-        /* Centrado absoluto y perfecto de imágenes en el sidebar */
-        section[data-testid="stSidebar"] [data-testid="stImage"] {
+        /* Centrado estricto y tamaño controlado del logotipo */
+        .login-logo-container {
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
             width: 100% !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
+            margin-bottom: 15px !important;
         }
-        section[data-testid="stSidebar"] [data-testid="stImage"] img {
+        .login-logo-container img {
+            max-width: 220px !important;
+            width: 100% !important;
+            height: auto !important;
             display: block !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-            float: none !important;
+            margin: 0 auto !important;
         }
-        
+
         section[data-testid="stSidebar"] {
             display: block !important;
             visibility: visible !important;
@@ -110,8 +110,8 @@ st.markdown(
         }
         [data-testid="stDecoration"] { display: none !important; }
         .block-container {
-            padding-top: 0.5rem !important;
-            padding-bottom: 0.5rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
         }
     </style>
 """,
@@ -255,17 +255,17 @@ if "autenticado" not in st.session_state:
     st.session_state.rol = None
 
 if not st.session_state.autenticado:
-    col_l1, col_l2, col_l3 = st.columns([1, 1.4, 1])
+    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
     with col_l2:
-        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
         
         ruta_logo = buscar_logo()
         if ruta_logo:
             encoded_logo = obtener_base64_imagen(ruta_logo)
             st.markdown(
                 f"""
-                <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 12px;">
-                    <img src="data:image/png;base64,{encoded_logo}" style="width: 100%; height: auto; display: block; margin: 0 auto;">
+                <div class="login-logo-container">
+                    <img src="data:image/png;base64,{encoded_logo}">
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -273,12 +273,12 @@ if not st.session_state.autenticado:
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
-        st.markdown("<p style='text-align: center; color: #9da3af; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 18px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #9da3af; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
 
-        st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
         if st.button("Iniciar Sesión", type="primary", use_container_width=True):
             conn = get_connection()
             c = conn.cursor()
