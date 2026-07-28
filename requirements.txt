@@ -1,4 +1,5 @@
 streamlit
-libsql-client
 pandas
 plotly
+openpyxl
+libsql
