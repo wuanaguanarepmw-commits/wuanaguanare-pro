@@ -22,7 +22,7 @@ st.set_page_config(
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL PRO: ELIMINACIÓN DE PUBLICIDAD Y LOGO CONTROLADO
+# CONFIGURACIÓN VISUAL: PALETA AZUL ESCRITORIO, LOGO Y ANCHOS
 # =====================================================================
 st.markdown(
     """
@@ -46,51 +46,73 @@ st.markdown(
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Paleta de colores industriales */
+        /* Paleta de colores: Azul Oscuro y Azul Claro estilo App de Escritorio Nativa */
         :root {
-            --primary-red: #E63946;
-            --bg-dark: #0E1117;
-            --card-bg: #161B22;
-            --border-color: #30363D;
+            --bg-deep: #0A1128;
+            --bg-card: #101B3B;
+            --input-bg: #172554;
+            --input-border: #1E3A8A;
+            --primary-blue: #2563EB;
+            --accent-blue: #3B82F6;
+            --light-blue: #60A5FA;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
         }
         
-        /* Estilos limpios para los inputs de acceso */
-        [data-baseweb="input"] {
-            background-color: #1A202C !important;
-            border-color: #2D3748 !important;
-            border-radius: 6px !important;
-        }
-        [data-baseweb="input"]:focus-within {
-            border-color: #E63946 !important;
-            box-shadow: 0 0 0 1px #E63946 !important;
-        }
-        
-        /* Botón principal */
-        button[kind="primary"] {
-            background-color: #E63946 !important;
-            border: none !important;
-            color: white !important;
-            font-weight: 600 !important;
-            border-radius: 6px !important;
-        }
-        button[kind="primary"]:hover {
-            background-color: #D90429 !important;
+        /* Fondo general de la app */
+        .stApp {
+            background-color: var(--bg-deep) !important;
         }
 
-        /* Centrado estricto y tamaño controlado del logotipo */
+        /* Centrado estricto y tamaño ampliado del logotipo */
         .login-logo-container {
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
             width: 100% !important;
-            margin-bottom: 15px !important;
+            margin-bottom: 25px !important;
         }
         .login-logo-container img {
-            max-width: 220px !important;
+            max-width: 320px !important;
             width: 100% !important;
             height: auto !important;
             display: block !important;
             margin: 0 auto !important;
+        }
+
+        /* Ancho compacto y centrado para los campos de usuario y contraseña */
+        .stTextInput {
+            max-width: 380px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
+        /* Estilos limpios para los inputs de acceso */
+        [data-baseweb="input"] {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            border-radius: 6px !important;
+        }
+        [data-baseweb="input"]:focus-within {
+            border-color: var(--accent-blue) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* Botón principal compacto y centrado */
+        button[kind="primary"] {
+            max-width: 380px !important;
+            width: 100% !important;
+            margin: 10px auto 0 auto !important;
+            display: block !important;
+            background-color: var(--primary-blue) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+        }
+        button[kind="primary"]:hover {
+            background-color: #1D4ED8 !important;
         }
 
         section[data-testid="stSidebar"] {
@@ -100,6 +122,7 @@ st.markdown(
             min-width: 300px !important;
             max-width: 300px !important;
             border-right: none !important;
+            background-color: var(--bg-card) !important;
         }
         section[data-testid="stSidebar"] > div {
             width: 300px !important;
@@ -257,7 +280,7 @@ if "autenticado" not in st.session_state:
 if not st.session_state.autenticado:
     col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
     with col_l2:
-        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
         
         ruta_logo = buscar_logo()
         if ruta_logo:
@@ -273,7 +296,7 @@ if not st.session_state.autenticado:
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
-        st.markdown("<p style='text-align: center; color: #9da3af; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #94A3B8; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
