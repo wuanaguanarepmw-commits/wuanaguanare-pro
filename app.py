@@ -65,10 +65,12 @@ st.markdown(
 )
 
 # =====================================================================
-# UTILIDADES DEL LOGO (Evita problemas de mayúsculas/minúsculas en la nube)
+# UTILIDADES DEL LOGO (Ampliado para detectar cualquier nombre en GitHub)
 # =====================================================================
 def buscar_logo():
     nombres_posibles = [
+        "logo_wuanaguanare.png", "logo_wuanaguanare.jpg", "logo_wuanaguanare.jpeg",
+        "wuanaguanare.png", "wuanaguanare.jpg",
         "logo.png", "logo.jpg", "logo.jpeg", 
         "Logo.png", "Logo.jpg", "Logo.ico",
         "LOGO.png", "LOGO.PNG", "LOGO.JPG"
@@ -201,12 +203,11 @@ if not st.session_state.autenticado:
         # Cargar logo de forma segura
         ruta_logo = buscar_logo()
         if ruta_logo:
-            # Usar st.image nativo para evitar problemas de base64
             col_img1, col_img2, col_img3 = st.columns([1, 1, 1])
             with col_img2:
-                st.image(ruta_logo, use_column_width=True)
+                st.image(ruta_logo, use_container_width=True)
         else:
-            st.warning("No se encontró el archivo del logo. Revisa el nombre en GitHub.")
+            st.warning("⚠️ No se encontró el archivo del logo en GitHub. Asegúrate de subir la imagen (ej: logo_wuanaguanare.png) en la misma carpeta que app.py.")
 
         st.markdown("<h2 style='text-align: center;'>Wuanaguanare Pro</h2>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: gray;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
@@ -264,7 +265,7 @@ def cerrar_y_reiniciar_proyecto(directorio_respaldos="historico_db"):
 # =====================================================================
 ruta_logo_sidebar = buscar_logo()
 if ruta_logo_sidebar:
-    st.sidebar.image(ruta_logo_sidebar, use_column_width=True)
+    st.sidebar.image(ruta_logo_sidebar, use_container_width=True)
 else:
     st.sidebar.title("WUANAGUANARE PMW")
 
