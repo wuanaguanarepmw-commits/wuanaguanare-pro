@@ -451,13 +451,26 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
         col1, col2 = st.columns(2)
         with col1:
             soldador = st.selectbox("Soldador / Operador", options=options_operadores)
-            orden_trabajo = st.text_input("Orden de Trabajo / Proyecto (Ej: OT-2026-04)", value="GENERAL")
-            p_cierre = st.number_input("Presión Cierre (PSI)", min_value=0, value=0)
         with col2:
             soldadura_lineal = st.number_input("Soldadura Lineal (m)", min_value=0.0, value=0.0, format="%.2f")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            orden_trabajo = st.text_input("Orden de Trabajo / Proyecto (Ej: OT-2026-04)", value="GENERAL")
+        with col2:
             soldadura_no_lineal = st.number_input("Soldadura No Lineal (m)", min_value=0.0, value=0.0, format="%.2f")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            p_cierre = st.number_input("Presión Cierre (PSI)", min_value=0, value=0)
+        with col2:
             punteos = st.number_input("Punteos (Cantidad)", min_value=0, value=0)
+
+        col1, col2 = st.columns(2)
+        with col1:
             tungstenos = st.number_input("Tungstenos gastados", min_value=0, value=0)
+        with col2:
+            st.markdown("")  # Espacio vacío para mantener simetría perfecta
 
         st.write("")
         submitted_jornada = st.form_submit_button("Guardar Jornada", type="primary", use_container_width=True)
