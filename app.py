@@ -767,7 +767,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                 title="Consumo Total de Argón por Operador (PSI)",
                 labels={"consumo_argon": "Total PSI", "soldador": "Operador"},
             )
-            st.plotly_chart(fig_argon_op, use_container_width=True)
+            st.plotly_chart(fig_argon_op, use_container_width=True, config={"displayModeBar": False})
 
         with col2:
             df_soldadura_op = df_registros.groupby("soldador")[["soldadura_lineal", "soldadura_no_lineal"]].sum().reset_index()
@@ -779,7 +779,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                 title="Metros de Soldadura por Operador",
                 labels={"value": "Metros (m)", "soldador": "Operador", "variable": "Tipo de Soldadura"},
             )
-            st.plotly_chart(fig_soldadura_op, use_container_width=True)
+            st.plotly_chart(fig_soldadura_op, use_container_width=True, config={"displayModeBar": False})
 
         # Tablas de Resumen y Exportación
         st.markdown("---")
