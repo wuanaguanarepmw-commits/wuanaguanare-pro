@@ -3,7 +3,7 @@ from datetime import datetime
 import io
 import os
 import shutil
-import libsql
+import sqlite3
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -65,160 +65,167 @@ st.markdown(
 )
 
 # =====================================================================
-# 1. BASE DE DATOS INDUSTRIAL EN LA NUBE (TURSO) Y GESTIÓN DE USUARIOS
+# 1. BASE DE DATOS INDUSTRIAL Y GESTIÓN DE USUARIOS
 # =====================================================================
 
 
 def get_connection():
-  conn = libsql.connect(
-      database=st.secrets["TURSO_DATABASE_URL"],
-      auth_token=st.secrets["TURSO_AUTH_TOKEN"],
-  )
+  conn = sqlite3.connect("wuanaguanare_db.sqlite", check_same_thread=False)
+  conn.execute("PRAGMA foreign_keys = ON;")
+  conn.execute("PRAGMA journal_mode = WAL;")
   return conn
 
 
 def init_db():
-  conn = get_connection()
-  c = conn.cursor()
+  try:
+    conn = get_connection()
+    c = conn.cursor()
 
-  # Tabla de Usuarios y Credenciales del Sistema
-  c.execute("""CREATE TABLE IF NOT EXISTS usuarios_sistema (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                usuario TEXT UNIQUE, 
-                password TEXT, 
-                rol TEXT)""")
+    # Tabla de Usuarios y Credenciales del Sistema
+    c.execute("""CREATE TABLE IF NOT EXISTS usuarios_sistema (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  usuario TEXT UNIQUE, 
+                  password TEXT, 
+                  rol TEXT)""")
 
-  # Crear usuario TIC por defecto si la tabla está totalmente vacía
-  c.execute("SELECT COUNT(*) FROM usuarios_sistema")
-  if c.fetchone()[0] == 0:
-    c.execute(
-        "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?, ?)",
-        ("tic", "admin123", "TIC"),
-    )
-    c.execute(
-        "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?, ?)",
-        ("gerencia", "gerencia123", "Gerencia"),
-    )
-    c.execute(
-        "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?, ?)",
-        ("almacen", "almacen123", "Almacén"),
-    )
-    c.execute(
-        "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?, ?)",
-        ("seguimiento", "argon123", "Seguimiento"),
-    )
+    # Crear usuario TIC por defecto si la tabla está totalmente vacía
+    c.execute("SELECT COUNT(*) FROM usuarios_sistema")
+    if c.fetchone()[0] == 0:
+      c.execute(
+          "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?,"
+          " ?)",
+          ("tic", "admin123", "TIC"),
+      )
+      c.execute(
+          "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?,"
+          " ?)",
+          ("gerencia", "gerencia123", "Gerencia"),
+      )
+      c.execute(
+          "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?,"
+          " ?)",
+          ("almacen", "almacen123", "Almacén"),
+      )
+      c.execute(
+          "INSERT INTO usuarios_sistema (usuario, password, rol) VALUES (?, ?,"
+          " ?)",
+          ("seguimiento", "argon123", "Seguimiento"),
+      )
 
-  # Tablas operativas principales
-  c.execute("""CREATE TABLE IF NOT EXISTS cilindros (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                nombre TEXT UNIQUE, 
-                presion_inicial INTEGER, 
-                presion_actual INTEGER)""")
+    # Tablas operativas principales
+    c.execute("""CREATE TABLE IF NOT EXISTS cilindros (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  nombre TEXT UNIQUE, 
+                  presion_inicial INTEGER, 
+                  presion_actual INTEGER)""")
 
-  c.execute("""CREATE TABLE IF NOT EXISTS inventario (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                codigo TEXT UNIQUE, 
-                insumo TEXT, 
-                cantidad REAL, 
-                unidad TEXT,
-                stock_minimo REAL DEFAULT 0.0,
-                costo_unitario REAL DEFAULT 0.0)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS inventario (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  codigo TEXT UNIQUE, 
+                  insumo TEXT, 
+                  cantidad REAL, 
+                  unidad TEXT,
+                  stock_minimo REAL DEFAULT 0.0,
+                  costo_unitario REAL DEFAULT 0.0)""")
 
-  c.execute("""CREATE TABLE IF NOT EXISTS registros_diarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                fecha TEXT, 
-                cilindro TEXT, 
-                soldador TEXT, 
-                presion_inicio INTEGER, 
-                presion_cierre INTEGER, 
-                consumo_argon INTEGER, 
-                soldadura_lineal REAL DEFAULT 0.0, 
-                soldadura_no_lineal REAL DEFAULT 0.0, 
-                punteos INTEGER DEFAULT 0, 
-                tungstenos INTEGER DEFAULT 0, 
-                varilla_gastada REAL DEFAULT 0.0,
-                orden_trabajo TEXT DEFAULT 'GENERAL')""")
+    c.execute("""CREATE TABLE IF NOT EXISTS registros_diarios (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  fecha TEXT, 
+                  cilindro TEXT, 
+                  soldador TEXT, 
+                  presion_inicio INTEGER, 
+                  presion_cierre INTEGER, 
+                  consumo_argon INTEGER, 
+                  soldadura_lineal REAL DEFAULT 0.0, 
+                  soldadura_no_lineal REAL DEFAULT 0.0, 
+                  punteos INTEGER DEFAULT 0, 
+                  tungstenos INTEGER DEFAULT 0, 
+                  varilla_gastada REAL DEFAULT 0.0,
+                  orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
-  c.execute("""CREATE TABLE IF NOT EXISTS operadores (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                nombre TEXT UNIQUE)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS operadores (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  nombre TEXT UNIQUE)""")
 
-  c.execute("""CREATE TABLE IF NOT EXISTS historial_entregas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                fecha TEXT, 
-                codigo_insumo TEXT, 
-                insumo TEXT, 
-                cantidad REAL, 
-                unidad TEXT, 
-                operador TEXT,
-                orden_trabajo TEXT DEFAULT 'GENERAL')""")
+    c.execute("""CREATE TABLE IF NOT EXISTS historial_entregas (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  fecha TEXT, 
+                  codigo_insumo TEXT, 
+                  insumo TEXT, 
+                  cantidad REAL, 
+                  unidad TEXT, 
+                  operador TEXT,
+                  orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
-  # Migraciones de columnas seguras
-  c.execute("PRAGMA table_info(cilindros)")
-  cols_cil = [col[1] for col in c.fetchall()]
-  if "presion_inicial" not in cols_cil:
-    c.execute(
-        "ALTER TABLE cilindros ADD COLUMN presion_inicial INTEGER DEFAULT 0"
-    )
-  if "presion_actual" not in cols_cil:
-    c.execute(
-        "ALTER TABLE cilindros ADD COLUMN presion_actual INTEGER DEFAULT 0"
-    )
+    # Migraciones de columnas seguras
+    c.execute("PRAGMA table_info(cilindros)")
+    cols_cil = [col[1] for col in c.fetchall()]
+    if "presion_inicial" not in cols_cil:
+      c.execute(
+          "ALTER TABLE cilindros ADD COLUMN presion_inicial INTEGER DEFAULT 0"
+      )
+    if "presion_actual" not in cols_cil:
+      c.execute(
+          "ALTER TABLE cilindros ADD COLUMN presion_actual INTEGER DEFAULT 0"
+      )
 
-  c.execute("PRAGMA table_info(inventario)")
-  cols_inv = [col[1] for col in c.fetchall()]
-  if "stock_minimo" not in cols_inv:
-    c.execute(
-        "ALTER TABLE inventario ADD COLUMN stock_minimo REAL DEFAULT 0.0"
-    )
-  if "costo_unitario" not in cols_inv:
-    c.execute(
-        "ALTER TABLE inventario ADD COLUMN costo_unitario REAL DEFAULT 0.0"
-    )
+    c.execute("PRAGMA table_info(inventario)")
+    cols_inv = [col[1] for col in c.fetchall()]
+    if "stock_minimo" not in cols_inv:
+      c.execute(
+          "ALTER TABLE inventario ADD COLUMN stock_minimo REAL DEFAULT 0.0"
+      )
+    if "costo_unitario" not in cols_inv:
+      c.execute(
+          "ALTER TABLE inventario ADD COLUMN costo_unitario REAL DEFAULT 0.0"
+      )
 
-  c.execute("PRAGMA table_info(registros_diarios)")
-  cols_reg = [col[1] for col in c.fetchall()]
-  if "soldadura_lineal" not in cols_reg:
-    c.execute(
-        "ALTER TABLE registros_diarios ADD COLUMN soldadura_lineal REAL DEFAULT"
-        " 0.0"
-    )
-  if "soldadura_no_lineal" not in cols_reg:
-    c.execute(
-        "ALTER TABLE registros_diarios ADD COLUMN soldadura_no_lineal REAL"
-        " DEFAULT 0.0"
-    )
-  if "punteos" not in cols_reg:
-    c.execute(
-        "ALTER TABLE registros_diarios ADD COLUMN punteos INTEGER DEFAULT 0"
-    )
-  if "tungstenos" not in cols_reg:
-    c.execute(
-        "ALTER TABLE registros_diarios ADD COLUMN tungstenos INTEGER DEFAULT 0"
-    )
-  if "varilla_gastada" not in cols_reg:
-    c.execute(
-        "ALTER TABLE registros_diarios ADD COLUMN varilla_gastada REAL DEFAULT"
-        " 0.0"
-    )
-  if "orden_trabajo" not in cols_reg:
-    c.execute(
-        "ALTER TABLE registros_diarios ADD COLUMN orden_trabajo TEXT DEFAULT"
-        " 'GENERAL'"
-    )
+    c.execute("PRAGMA table_info(registros_diarios)")
+    cols_reg = [col[1] for col in c.fetchall()]
+    if "soldadura_lineal" not in cols_reg:
+      c.execute(
+          "ALTER TABLE registros_diarios ADD COLUMN soldadura_lineal REAL"
+          " DEFAULT 0.0"
+      )
+    if "soldadura_no_lineal" not in cols_reg:
+      c.execute(
+          "ALTER TABLE registros_diarios ADD COLUMN soldadura_no_lineal REAL"
+          " DEFAULT 0.0"
+      )
+    if "punteos" not in cols_reg:
+      c.execute(
+          "ALTER TABLE registros_diarios ADD COLUMN punteos INTEGER DEFAULT 0"
+      )
+    if "tungstenos" not in cols_reg:
+      c.execute(
+          "ALTER TABLE registros_diarios ADD COLUMN tungstenos INTEGER DEFAULT"
+          " 0"
+      )
+    if "varilla_gastada" not in cols_reg:
+      c.execute(
+          "ALTER TABLE registros_diarios ADD COLUMN varilla_gastada REAL"
+          " DEFAULT 0.0"
+      )
+    if "orden_trabajo" not in cols_reg:
+      c.execute(
+          "ALTER TABLE registros_diarios ADD COLUMN orden_trabajo TEXT DEFAULT"
+          " 'GENERAL'"
+      )
 
-  c.execute("PRAGMA table_info(historial_entregas)")
-  cols_hist = [col[1] for col in c.fetchall()]
-  if "codigo_insumo" not in cols_hist:
-    c.execute("ALTER TABLE historial_entregas ADD COLUMN codigo_insumo TEXT")
-  if "orden_trabajo" not in cols_hist:
-    c.execute(
-        "ALTER TABLE historial_entregas ADD COLUMN orden_trabajo TEXT DEFAULT"
-        " 'GENERAL'"
-    )
+    c.execute("PRAGMA table_info(historial_entregas)")
+    cols_hist = [col[1] for col in c.fetchall()]
+    if "codigo_insumo" not in cols_hist:
+      c.execute("ALTER TABLE historial_entregas ADD COLUMN codigo_insumo TEXT")
+    if "orden_trabajo" not in cols_hist:
+      c.execute(
+          "ALTER TABLE historial_entregas ADD COLUMN orden_trabajo TEXT"
+          " DEFAULT 'GENERAL'"
+      )
 
-  conn.commit()
-  conn.close()
+    conn.commit()
+    conn.close()
+  except Exception as e:
+    st.error(f"Error crítico al inicializar la base de datos: {e}")
 
 
 init_db()
@@ -290,19 +297,39 @@ if not st.session_state.autenticado:
   st.stop()
 
 
-# Función de cierre y purga transaccional en la nube
-def cerrar_y_reiniciar_proyecto():
+# Función de cierre y purga transaccional
+def cerrar_y_reiniciar_proyecto(directorio_respaldos="historico_db"):
+  if not os.path.exists(directorio_respaldos):
+    os.makedirs(directorio_respaldos)
+  timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+  ruta_respaldo = os.path.join(
+      directorio_respaldos, f"respaldo_proyecto_{timestamp}.sqlite"
+  )
   try:
+    if os.path.exists("wuanaguanare_db.sqlite"):
+      shutil.copy2("wuanaguanare_db.sqlite", ruta_respaldo)
+
     conn = get_connection()
     with conn:
       conn.execute("DELETE FROM registros_diarios;")
       conn.execute("DELETE FROM historial_entregas;")
+      conn.execute(
+          "DELETE FROM sqlite_sequence WHERE name IN"
+          " ('registros_diarios', 'historial_entregas');"
+      )
     conn.close()
+
+    conn_vacuum = sqlite3.connect(
+        "wuanaguanare_db.sqlite", check_same_thread=False
+    )
+    conn_vacuum.isolation_level = None
+    conn_vacuum.execute("VACUUM;")
+    conn_vacuum.close()
 
     return (
         True,
-        "Proyecto cerrado con éxito. Tablas transaccionales restablecidas a"
-        " cero en Turso.",
+        f"Proyecto cerrado con éxito. Histórico guardado en '{ruta_respaldo}' y"
+        " tablas transaccionales restablecidas a cero.",
     )
   except Exception as e:
     return False, f"Error crítico al intentar restablecer la base de datos: {e}"
@@ -368,7 +395,18 @@ if st.sidebar.button(
 
 st.sidebar.write("---")
 st.sidebar.subheader("🔒 Seguridad de Datos")
-st.sidebar.info("ℹ️ Base de datos alojada y protegida de forma segura en Turso.")
+if os.path.exists("wuanaguanare_db.sqlite"):
+  with open("wuanaguanare_db.sqlite", "rb") as db_file:
+    st.sidebar.download_button(
+        label="📥 Descargar Respaldo (Backup)",
+        data=db_file,
+        file_name=(
+            "backup_wuanaguanare_"
+            f"{datetime.now().strftime('%Y%m%d_%H%M')}.sqlite"
+        ),
+        mime="application/x-sqlite3",
+        use_container_width=True,
+    )
 
 # Alerta global de stock bajo en barra lateral
 conn = get_connection()
@@ -530,7 +568,7 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
     del st.session_state["toast_jornada"]
 
 # =====================================================================
-# MÓDULO 2: GESTIÓN DE PLANTA Y PROYECTOS (INCLUYE GESTIÓN DE USUARIOS TIC)
+# MÓDULO 2: GESTIÓN DE PLANTA Y PROYECTOS
 # =====================================================================
 elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
   st.header("📦 Gestión de Planta, Insumos y Accesos del Sistema")
@@ -582,8 +620,10 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
               icon="✅",
           )
           st.rerun()
-        except Exception:
+        except sqlite3.IntegrityError:
           st.toast("⚠️ Este cilindro ya se encuentra registrado.", icon="⚠️")
+        except Exception as ex:
+          st.toast(f"Error al registrar cilindro: {ex}", icon="❌")
       else:
         st.toast(
             "⚠️ Debe ingresar un nombre o código de cilindro válido.", icon="⚠️"
@@ -804,11 +844,20 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     with col_ent4:
       if unidad_retiro in ["Unidad", "Pares"]:
         cant_entrega = st.number_input(
-            "Cantidad", min_value=0, value=0, step=1, format="%d", key="ent_cant_int"
+            "Cantidad",
+            min_value=0,
+            value=0,
+            step=1,
+            format="%d",
+            key="ent_cant_int",
         )
       else:
         cant_entrega = st.number_input(
-            "Cantidad", min_value=0.0, value=0.0, format="%.2f", key="ent_cant_float"
+            "Cantidad",
+            min_value=0.0,
+            value=0.0,
+            format="%.2f",
+            key="ent_cant_float",
         )
 
     cant_a_descontar = float(cant_entrega)
@@ -948,12 +997,16 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           conn = get_connection()
           with conn:
             c = conn.cursor()
-            c.execute("INSERT INTO operadores (nombre) VALUES (?)", (val.upper(),))
+            c.execute(
+                "INSERT INTO operadores (nombre) VALUES (?)", (val.upper(),)
+            )
           conn.close()
           st.toast(f"Operador {val.upper()} registrado exitosamente.", icon="✅")
           st.session_state.input_nom_op = ""
-        except Exception:
+        except sqlite3.IntegrityError:
           st.toast("⚠️ Este operador ya se encuentra registrado.", icon="⚠️")
+        except Exception as ex:
+          st.toast(f"Error: {ex}", icon="❌")
       else:
         st.toast("⚠️ Debe ingresar un nombre válido.", icon="⚠️")
 
@@ -985,7 +1038,9 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           conn = get_connection()
           with conn:
             c = conn.cursor()
-            c.execute("DELETE FROM operadores WHERE nombre = ?", (op_seleccionado,))
+            c.execute(
+                "DELETE FROM operadores WHERE nombre = ?", (op_seleccionado,)
+            )
           conn.close()
           st.toast(
               f"Operador {op_seleccionado} eliminado exitosamente.", icon="✅"
@@ -1085,7 +1140,9 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
       st.write("---")
       st.subheader("🗑️ Eliminar Usuario del Sistema")
       conn = get_connection()
-      df_users_del = pd.read_sql_query("SELECT usuario FROM usuarios_sistema", conn)
+      df_users_del = pd.read_sql_query(
+          "SELECT usuario FROM usuarios_sistema", conn
+      )
       conn.close()
       lista_users_del = (
           df_users_del["usuario"].tolist() if not df_users_del.empty else []
@@ -1145,8 +1202,8 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     st.subheader("🏁 Cierre de Proyecto y Reseteo Operativo")
     st.markdown("""
         Utilice esta herramienta al concluir un proyecto de fabricación. 
-        Esto limpia los registros transaccionales operativos y reinicia contadores en la base de datos en la nube, 
-        manteniendo intacto su inventario maestro, operadores y accesos de usuarios.
+        Esto realiza automáticamente un respaldo histórico, limpia los registros transaccionales operativos, 
+        reinicia contadores y optimiza la base de datos, manteniendo intacto su inventario maestro, operadores y accesos de usuarios.
         """)
     st.write("")
     confirmar_reset = st.checkbox(
