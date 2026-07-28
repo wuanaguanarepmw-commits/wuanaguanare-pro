@@ -12,7 +12,7 @@ import streamlit as st
 # CONFIGURACIÓN DE LA PÁGINA
 # =====================================================================
 st.set_page_config(
-    page_title="Wuanaguanare Pro - Planta Madre",
+    page_title="Wuanaguanare - Planta Madre",
     page_icon="⚙️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -57,7 +57,7 @@ st.markdown(
             visibility: hidden !important; 
         }
         .block-container {
-            padding-top: 2rem !important;
+            padding-top: 1rem !important;
         }
     </style>
 """,
@@ -65,7 +65,7 @@ st.markdown(
 )
 
 # =====================================================================
-# UTILIDADES DEL LOGO (Ampliado para detectar cualquier nombre en GitHub)
+# UTILIDADES DEL LOGO (Detección automática de nombres en GitHub)
 # =====================================================================
 def buscar_logo():
     nombres_posibles = [
@@ -189,28 +189,28 @@ def init_db():
 init_db()
 
 # =====================================================================
-# SISTEMA DE AUTENTICACIÓN DINÁMICO
+# SISTEMA DE AUTENTICACIÓN DINÁMICO (Diseño Centrado y Compacto)
 # =====================================================================
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
     st.session_state.rol = None
 
 if not st.session_state.autenticado:
-    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
+    # Columnas laterales más anchas para que la columna central del login sea compacta y elegante
+    col_l1, col_l2, col_l3 = st.columns([1.5, 1, 1.5])
     with col_l2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        # Cargar logo de forma segura
+        # Cargar logo de forma segura y centrada
         ruta_logo = buscar_logo()
         if ruta_logo:
-            col_img1, col_img2, col_img3 = st.columns([1, 1, 1])
-            with col_img2:
-                st.image(ruta_logo, use_container_width=True)
+            st.image(ruta_logo, use_container_width=True)
         else:
-            st.warning("⚠️ No se encontró el archivo del logo en GitHub. Asegúrate de subir la imagen (ej: logo_wuanaguanare.png) en la misma carpeta que app.py.")
+            st.warning("⚠️ Falta el archivo del logo en GitHub (ej: logo_wuanaguanare.png).")
 
-        st.markdown("<h2 style='text-align: center;'>Wuanaguanare Pro</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; margin-bottom: 0px;'>Wuanaguanare</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; font-size: 0.9rem; margin-top: 5px;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
         usuario_input = st.text_input("Usuario")
         password_input = st.text_input("Contraseña", type="password")
