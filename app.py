@@ -231,15 +231,15 @@ if not st.session_state.autenticado:
 
     col_l1, col_l2, col_l3 = st.columns([1.5, 1.2, 1.5])
     with col_l2:
-        st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
         
         ruta_logo = buscar_logo()
         if ruta_logo:
             encoded_logo = obtener_base64_imagen(ruta_logo)
             st.markdown(
                 f"""
-                <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 5px;">
-                    <img src="data:image/png;base64,{encoded_logo}" width="260" style="display: block; margin: 0 auto; float: none;">
+                <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 12px;">
+                    <img src="data:image/png;base64,{encoded_logo}" width="210" style="display: block; margin: 0 auto; float: none;">
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -247,8 +247,7 @@ if not st.session_state.autenticado:
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
-        st.markdown("<h2 style='text-align: center; margin: 0px 0px 0px 0px; font-size: 1.6rem;'>Wuanaguanare</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray; font-size: 0.8rem; margin: 2px 0px 10px 0px;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #9da3af; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 15px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
