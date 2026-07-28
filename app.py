@@ -38,8 +38,8 @@ st.markdown(
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Centrado absoluto y perfecto de todas las imágenes (logo) en body y sidebar */
-        [data-testid="stImage"], section[data-testid="stSidebar"] [data-testid="stImage"] {
+        /* Centrado absoluto y perfecto de imágenes en el sidebar */
+        section[data-testid="stSidebar"] [data-testid="stImage"] {
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
@@ -47,7 +47,7 @@ st.markdown(
             margin-left: auto !important;
             margin-right: auto !important;
         }
-        [data-testid="stImage"] img, section[data-testid="stSidebar"] [data-testid="stImage"] img {
+        section[data-testid="stSidebar"] [data-testid="stImage"] img {
             display: block !important;
             margin-left: auto !important;
             margin-right: auto !important;
@@ -85,7 +85,7 @@ st.markdown(
 )
 
 # =====================================================================
-# UTILIDADES DEL LOGO (Detección automática de nombres en GitHub)
+# UTILIDADES DEL LOGO Y CONVERSIÓN BASE64
 # =====================================================================
 def buscar_logo():
     nombres_posibles = [
@@ -99,6 +99,11 @@ def buscar_logo():
         if os.path.exists(nombre):
             return nombre
     return None
+
+def obtener_base64_imagen(ruta):
+    with open(ruta, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode("utf-8")
 
 # =====================================================================
 # 1. BASE DE DATOS INDUSTRIAL Y GESTIÓN DE USUARIOS
@@ -230,7 +235,15 @@ if not st.session_state.autenticado:
         
         ruta_logo = buscar_logo()
         if ruta_logo:
-            st.image(ruta_logo, width=260)
+            encoded_logo = obtener_base64_imagen(ruta_logo)
+            st.markdown(
+                f"""
+                <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 5px;">
+                    <img src="data:image/png;base64,{encoded_logo}" width="260" style="display: block; margin: 0 auto; float: none;">
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
@@ -753,8 +766,6 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
             st.plotly_chart(fig_argon_total, use_container_width=True)
 
         # 2. Gráfico de Soldadura Integral (Lineal, No Lineal y Punteos)
-        st.markdown("### 📏 Desglose de Soldadura (Lineal, No Lineal y Punteos)")
-
         fig_soldadura = px.bar(
             df_registros,
             x="soldador",
