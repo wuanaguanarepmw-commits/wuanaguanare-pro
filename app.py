@@ -57,7 +57,8 @@ st.markdown(
             visibility: hidden !important; 
         }
         .block-container {
-            padding-top: 1rem !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
         }
     </style>
 """,
@@ -189,33 +190,41 @@ def init_db():
 init_db()
 
 # =====================================================================
-# SISTEMA DE AUTENTICACIÓN DINÁMICO (Diseño Centrado y Compacto)
+# SISTEMA DE AUTENTICACIÓN DINÁMICO (Diseño Compacto Ajustado al Monitor)
 # =====================================================================
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
     st.session_state.rol = None
 
 if not st.session_state.autenticado:
-    # Columnas laterales más anchas para que la columna central del login sea compacta y elegante
-    col_l1, col_l2, col_l3 = st.columns([1.5, 1, 1.5])
+    # Bloquear scroll en la página de login mediante estilo embebido
+    st.markdown("""
+        <style>
+            body, html, [data-testid="stAppViewContainer"] {
+                overflow: hidden !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    col_l1, col_l2, col_l3 = st.columns([1.5, 1.2, 1.5])
     with col_l2:
-        st.markdown("<br>", unsafe_allow_html=True)
+        # Contenedor con altura controlada para evitar barras de desplazamiento
+        st.markdown("<div style='margin-top: -10px;'></div>", unsafe_allow_html=True)
         
-        # Cargar logo de forma segura y centrada
         ruta_logo = buscar_logo()
         if ruta_logo:
-            st.image(ruta_logo, use_container_width=True)
+            # Forzar un ancho controlado para que el logo no sea gigantesco y quepa perfecto
+            st.image(ruta_logo, width=170)
         else:
-            st.warning("⚠️ Falta el archivo del logo en GitHub (ej: logo_wuanaguanare.png).")
+            st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
-        st.markdown("<h2 style='text-align: center; margin-bottom: 0px;'>Wuanaguanare</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray; font-size: 0.9rem; margin-top: 5px;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; margin: 0px 0px 0px 0px; font-size: 1.6rem;'>Wuanaguanare</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; font-size: 0.8rem; margin: 2px 0px 10px 0px;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
-        usuario_input = st.text_input("Usuario")
-        password_input = st.text_input("Contraseña", type="password")
+        usuario_input = st.text_input("Usuario", key="login_user")
+        password_input = st.text_input("Contraseña", type="password", key="login_pass")
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
         if st.button("Iniciar Sesión", type="primary", use_container_width=True):
             conn = get_connection()
             c = conn.cursor()
