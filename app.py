@@ -3,7 +3,7 @@ from datetime import datetime
 import io
 import os
 import shutil
-import sqlite3
+import libsql
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -65,14 +65,15 @@ st.markdown(
 )
 
 # =====================================================================
-# 1. BASE DE DATOS INDUSTRIAL Y GESTIÓN DE USUARIOS
+# 1. BASE DE DATOS INDUSTRIAL EN LA NUBE (TURSO) Y GESTIÓN DE USUARIOS
 # =====================================================================
 
 
 def get_connection():
-  conn = sqlite3.connect("wuanaguanare_db.sqlite", check_same_thread=False)
-  conn.execute("PRAGMA foreign_keys = ON;")
-  conn.execute("PRAGMA journal_mode = WAL;")
+  conn = libsql.connect(
+      database=st.secrets["TURSO_DATABASE_URL"],
+      auth_token=st.secrets["TURSO_AUTH_TOKEN"],
+  )
   return conn
 
 
@@ -289,39 +290,19 @@ if not st.session_state.autenticado:
   st.stop()
 
 
-# Función de cierre y purga transaccional
-def cerrar_y_reiniciar_proyecto(directorio_respaldos="historico_db"):
-  if not os.path.exists(directorio_respaldos):
-    os.makedirs(directorio_respaldos)
-  timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-  ruta_respaldo = os.path.join(
-      directorio_respaldos, f"respaldo_proyecto_{timestamp}.sqlite"
-  )
+# Función de cierre y purga transaccional en la nube
+def cerrar_y_reiniciar_proyecto():
   try:
-    if os.path.exists("wuanaguanare_db.sqlite"):
-      shutil.copy2("wuanaguanare_db.sqlite", ruta_respaldo)
-
     conn = get_connection()
     with conn:
       conn.execute("DELETE FROM registros_diarios;")
       conn.execute("DELETE FROM historial_entregas;")
-      conn.execute(
-          "DELETE FROM sqlite_sequence WHERE name IN"
-          " ('registros_diarios', 'historial_entregas');"
-      )
     conn.close()
-
-    conn_vacuum = sqlite3.connect(
-        "wuanaguanare_db.sqlite", check_same_thread=False
-    )
-    conn_vacuum.isolation_level = None
-    conn_vacuum.execute("VACUUM;")
-    conn_vacuum.close()
 
     return (
         True,
-        f"Proyecto cerrado con éxito. Histórico guardado en '{ruta_respaldo}' y"
-        " tablas transaccionales restablecidas a cero.",
+        "Proyecto cerrado con éxito. Tablas transaccionales restablecidas a"
+        " cero en Turso.",
     )
   except Exception as e:
     return False, f"Error crítico al intentar restablecer la base de datos: {e}"
@@ -387,18 +368,7 @@ if st.sidebar.button(
 
 st.sidebar.write("---")
 st.sidebar.subheader("🔒 Seguridad de Datos")
-if os.path.exists("wuanaguanare_db.sqlite"):
-  with open("wuanaguanare_db.sqlite", "rb") as db_file:
-    st.sidebar.download_button(
-        label="📥 Descargar Respaldo (Backup)",
-        data=db_file,
-        file_name=(
-            "backup_wuanaguanare_"
-            f"{datetime.now().strftime('%Y%m%d_%H%M')}.sqlite"
-        ),
-        mime="application/x-sqlite3",
-        use_container_width=True,
-    )
+st.sidebar.info("ℹ️ Base de datos alojada y protegida de forma segura en Turso.")
 
 # Alerta global de stock bajo en barra lateral
 conn = get_connection()
@@ -612,10 +582,8 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
               icon="✅",
           )
           st.rerun()
-        except sqlite3.IntegrityError:
+        except Exception:
           st.toast("⚠️ Este cilindro ya se encuentra registrado.", icon="⚠️")
-        except Exception as ex:
-          st.toast(f"Error al registrar cilindro: {ex}", icon="❌")
       else:
         st.toast(
             "⚠️ Debe ingresar un nombre o código de cilindro válido.", icon="⚠️"
@@ -984,10 +952,8 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
           conn.close()
           st.toast(f"Operador {val.upper()} registrado exitosamente.", icon="✅")
           st.session_state.input_nom_op = ""
-        except sqlite3.IntegrityError:
+        except Exception:
           st.toast("⚠️ Este operador ya se encuentra registrado.", icon="⚠️")
-        except Exception as ex:
-          st.toast(f"Error: {ex}", icon="❌")
       else:
         st.toast("⚠️ Debe ingresar un nombre válido.", icon="⚠️")
 
@@ -1179,8 +1145,8 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     st.subheader("🏁 Cierre de Proyecto y Reseteo Operativo")
     st.markdown("""
         Utilice esta herramienta al concluir un proyecto de fabricación. 
-        Esto realiza automáticamente un respaldo histórico, limpia los registros transaccionales operativos, 
-        reinicia contadores y optimiza la base de datos, manteniendo intacto su inventario maestro, operadores y accesos de usuarios.
+        Esto limpia los registros transaccionales operativos y reinicia contadores en la base de datos en la nube, 
+        manteniendo intacto su inventario maestro, operadores y accesos de usuarios.
         """)
     st.write("")
     confirmar_reset = st.checkbox(
