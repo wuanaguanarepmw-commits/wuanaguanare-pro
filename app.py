@@ -35,6 +35,16 @@ st.markdown(
         [data-testid="stSidebarCollapseButton"], 
         [data-testid="collapsedControl"] { display: none !important; }
         
+        /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
+        [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
+        
+        /* Centrar automáticamente todas las imágenes (incluyendo el logo) */
+        .stImage img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
         section[data-testid="stSidebar"] {
             display: block !important;
             visibility: visible !important;
@@ -190,14 +200,13 @@ def init_db():
 init_db()
 
 # =====================================================================
-# SISTEMA DE AUTENTICACIÓN DINÁMICO (Diseño Compacto Ajustado al Monitor)
+# SISTEMA DE AUTENTICACIÓN DINÁMICO
 # =====================================================================
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
     st.session_state.rol = None
 
 if not st.session_state.autenticado:
-    # Bloquear scroll en la página de login mediante estilo embebido
     st.markdown("""
         <style>
             body, html, [data-testid="stAppViewContainer"] {
@@ -208,13 +217,11 @@ if not st.session_state.autenticado:
 
     col_l1, col_l2, col_l3 = st.columns([1.5, 1.2, 1.5])
     with col_l2:
-        # Contenedor con altura controlada para evitar barras de desplazamiento
-        st.markdown("<div style='margin-top: -10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: -15px;'></div>", unsafe_allow_html=True)
         
         ruta_logo = buscar_logo()
         if ruta_logo:
-            # Forzar un ancho controlado para que el logo no sea gigantesco y quepa perfecto
-            st.image(ruta_logo, width=170)
+            st.image(ruta_logo, width=260)
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
@@ -734,12 +741,22 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                 df_consumo = df_diario.groupby("fecha")["consumo_argon"].sum().reset_index()
                 if not df_consumo.empty:
                     fig_consumo = px.line(df_consumo, x="fecha", y="consumo_argon", title="Consumo de Argón (PSI) por Registro", markers=True)
+                    fig_consumo.update_layout(xaxis_title="Fecha / Hora", yaxis_title="Consumo (PSI)")
                     st.plotly_chart(fig_consumo, use_container_width=True)
 
             with col_chart2:
                 df_soldador = df_diario.groupby("soldador")["consumo_argon"].sum().reset_index()
                 if not df_soldador.empty:
-                    fig_soldador = px.bar(df_soldador, x="soldador", y="consumo_argon", title="Total Consumo de Argón por Operador", color="soldador")
+                    fig_soldador = px.bar(
+                        df_soldador, 
+                        x="soldador", 
+                        y="consumo_argon", 
+                        title="Total Consumo de Argón por Operador", 
+                        color="soldador",
+                        text="consumo_argon"
+                    )
+                    fig_soldador.update_traces(width=0.35, textposition='auto')
+                    fig_soldador.update_layout(xaxis_title="Operador", yaxis_title="Consumo (PSI)")
                     st.plotly_chart(fig_soldador, use_container_width=True)
                     
             csv_diario = df_diario.to_csv(index=False).encode('utf-8')
@@ -765,7 +782,16 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                 
             with col_ent2:
                 df_entregas_op = df_entregas.groupby("operador").size().reset_index(name='cantidad_retiros')
-                fig_op = px.bar(df_entregas_op, x='operador', y='cantidad_retiros', title="Cantidad de Retiros de Almacén por Operador", color='operador')
+                fig_op = px.bar(
+                    df_entregas_op, 
+                    x='operador', 
+                    y='cantidad_retiros', 
+                    title="Cantidad de Retiros de Almacén por Operador", 
+                    color='operador',
+                    text='cantidad_retiros'
+                )
+                fig_op.update_traces(width=0.35, textposition='auto')
+                fig_op.update_layout(xaxis_title="Operador", yaxis_title="Cantidad Retiros")
                 st.plotly_chart(fig_op, use_container_width=True)
             
             csv_entregas = df_entregas.to_csv(index=False).encode('utf-8')
