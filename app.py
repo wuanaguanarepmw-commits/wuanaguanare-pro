@@ -549,26 +549,35 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     # --- TAB 1: CILINDROS ---
     with tab1:
         st.subheader("Control de Cilindros de Argón")
-        nombre_cilindro = st.text_input("Nombre / Código del Cilindro", key="input_nom_cil")
-        presion_ini = st.number_input("Presión Inicial (PSI)", min_value=0, value=0, key="input_presion_cil")
+        
+        # Formulario de Registro de Cilindros Alineado en Columnas
+        with st.form(key="form_registro_cilindro", clear_on_submit=True):
+            col_cil1, col_cil2 = st.columns(2, vertical_alignment="center")
+            with col_cil1:
+                nombre_cilindro = st.text_input("Nombre / Código del Cilindro", key="input_nom_cil")
+            with col_cil2:
+                presion_ini = st.number_input("Presión Inicial (PSI)", min_value=0, value=0, key="input_presion_cil")
+            
+            st.write("")
+            btn_reg_cilindro = st.form_submit_button("Registrar Cilindro", type="primary", use_container_width=True)
 
-        if st.button("Registrar Cilindro", key="btn_reg_cilindro"):
-            if nombre_cilindro.strip() != "":
-                try:
-                    conn = get_connection()
-                    with conn:
-                        c = conn.cursor()
-                        c.execute("INSERT INTO cilindros (nombre, presion_inicial, presion_actual) VALUES (?, ?, ?)",
-                                  (nombre_cilindro.strip().upper(), int(presion_ini), int(presion_ini)))
-                    conn.close()
-                    st.toast(f"Cilindro {nombre_cilindro.strip().upper()} agregado correctamente.", icon="✅")
-                    st.rerun()
-                except sqlite3.IntegrityError:
-                    st.toast("Este cilindro ya se encuentra registrado.", icon="⚠️")
-                except Exception as ex:
-                    st.toast(f"Error al registrar cilindro: {ex}", icon="❌")
-            else:
-                st.toast("Debe ingresar un nombre o código de cilindro válido.", icon="⚠️")
+            if btn_reg_cilindro:
+                if nombre_cilindro.strip() != "":
+                    try:
+                        conn = get_connection()
+                        with conn:
+                            c = conn.cursor()
+                            c.execute("INSERT INTO cilindros (nombre, presion_inicial, presion_actual) VALUES (?, ?, ?)",
+                                      (nombre_cilindro.strip().upper(), int(presion_ini), int(presion_ini)))
+                        conn.close()
+                        st.toast(f"Cilindro {nombre_cilindro.strip().upper()} agregado correctamente.", icon="✅")
+                        st.rerun()
+                    except sqlite3.IntegrityError:
+                        st.toast("Este cilindro ya se encuentra registrado.", icon="⚠️")
+                    except Exception as ex:
+                        st.toast(f"Error al registrar cilindro: {ex}", icon="❌")
+                else:
+                    st.toast("Debe ingresar un nombre o código de cilindro válido.", icon="⚠️")
 
         st.write("---")
         st.subheader("Eliminar Cilindro")
