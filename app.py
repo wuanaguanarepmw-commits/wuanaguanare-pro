@@ -734,57 +734,57 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
     conn.close()
 
     if not df_registros.empty:
-        # 1. Gráficos de Consumo de Argón en BARRAS por Registro e Individuales
-        st.markdown("### 🔵 Consumo de Argón")
+        # Totales Generales (Consumo general y Metros generales de soldadura)
+        st.markdown("### 🌐 Totales Generales del Proyecto")
+        total_argon_gen = int(df_registros["consumo_argon"].sum())
+        total_lineal_gen = float(df_registros["soldadura_lineal"].sum())
+        total_nolineal_gen = float(df_registros["soldadura_no_lineal"].sum())
+        total_punteos_gen = int(df_registros["punteos"].sum())
+
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        with col_m1:
+            st.metric("Argón General", f"{total_argon_gen} PSI")
+        with col_m2:
+            st.metric("Soldadura Lineal Total", f"{total_lineal_gen:.2f} m")
+        with col_m3:
+            st.metric("Soldadura No Lineal Total", f"{total_nolineal_gen:.2f} m")
+        with col_m4:
+            st.metric("Punteos Totales", f"{total_punteos_gen}")
+
+        st.markdown("---")
+
+        # Rendimiento Individual por Operador (Argón y Metros de Soldadura)
+        st.markdown("### 👤 Rendimiento y Totales por Operador")
         col1, col2 = st.columns(2)
 
         with col1:
-            fig_argon_reg = px.bar(
-                df_registros,
-                x="fecha",
-                y="consumo_argon",
-                color="soldador",
-                title="Consumo de Argón (PSI) por Registro",
-                labels={
-                    "consumo_argon": "Consumo (PSI)",
-                    "fecha": "Fecha / Hora",
-                    "soldador": "Operador"
-                },
-            )
-            st.plotly_chart(fig_argon_reg, use_container_width=True)
-
-        with col2:
             df_argon_op = df_registros.groupby("soldador")["consumo_argon"].sum().reset_index()
-            fig_argon_total = px.bar(
+            fig_argon_op = px.bar(
                 df_argon_op,
                 x="soldador",
                 y="consumo_argon",
                 color="soldador",
-                title="Total Consumo de Argón por Operador",
+                title="Consumo Total de Argón por Operador (PSI)",
                 labels={"consumo_argon": "Total PSI", "soldador": "Operador"},
             )
-            st.plotly_chart(fig_argon_total, use_container_width=True)
+            st.plotly_chart(fig_argon_op, use_container_width=True)
 
-        # 2. Gráfico de Soldadura Integral (Lineal, No Lineal y Punteos)
-        fig_soldadura = px.bar(
-            df_registros,
-            x="soldador",
-            y=["soldadura_lineal", "soldadura_no_lineal", "punteos"],
-            barmode="group",
-            title="Métricas de Soldadura y Punteos por Operador",
-            labels={
-                "value": "Cantidad (Metros / Unidades)",
-                "soldador": "Operador",
-                "variable": "Tipo de Métrica",
-            },
-        )
-        st.plotly_chart(fig_soldadura, use_container_width=True)
+        with col2:
+            df_soldadura_op = df_registros.groupby("soldador")[["soldadura_lineal", "soldadura_no_lineal"]].sum().reset_index()
+            fig_soldadura_op = px.bar(
+                df_soldadura_op,
+                x="soldador",
+                y=["soldadura_lineal", "soldadura_no_lineal"],
+                barmode="group",
+                title="Metros de Soldadura por Operador",
+                labels={"value": "Metros (m)", "soldador": "Operador", "variable": "Tipo de Soldadura"},
+            )
+            st.plotly_chart(fig_soldadura_op, use_container_width=True)
 
-        # 3. Sección de Resumen y Cierre de Proyecto
+        # Tablas de Resumen y Exportación
         st.markdown("---")
-        st.markdown("### 📥 Resumen General e Individual del Proyecto Finalizado")
+        st.markdown("### 📥 Tablas de Resumen y Exportación")
 
-        # Sumas Individuales por Operador
         st.markdown("#### Resumen Individual (Por Operador)")
         df_individual = df_registros.groupby("soldador").agg({
             "consumo_argon": "sum",
@@ -806,8 +806,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
         ]
         st.dataframe(df_individual, use_container_width=True)
 
-        # Sumas Generales del Proyecto
-        st.markdown("#### Resumen General (Totales del Proyecto)")
+        st.markdown("#### Resumen General Consolidado")
         totales_generales = pd.DataFrame({
             "Métrica Global": [
                 "Consumo Total de Argón (PSI)",
@@ -818,17 +817,16 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                 "Total Varilla Estimada (kg)"
             ],
             "Valor Total": [
-                df_registros["consumo_argon"].sum(),
-                df_registros["soldadura_lineal"].sum(),
-                df_registros["soldadura_no_lineal"].sum(),
-                df_registros["punteos"].sum(),
-                df_registros["tungstenos"].sum(),
-                df_registros["varilla_gastada"].sum(),
+                total_argon_gen,
+                total_lineal_gen,
+                total_nolineal_gen,
+                total_punteos_gen,
+                int(df_registros["tungstenos"].sum()),
+                float(df_registros["varilla_gastada"].sum()),
             ],
         })
         st.dataframe(totales_generales, use_container_width=True)
 
-        # Botón de Descarga del Reporte Completo
         def convertir_a_csv(df):
             return df.to_csv(index=False).encode("utf-8")
 
@@ -839,7 +837,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
             data=csv_reporte,
             file_name=f"reporte_final_wuanaguanare_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
-            help="Descarga la base de datos completa con registros detallados, sumas individuales y generales.",
+            help="Descarga la base de datos completa con registros detallados y sumas consolidadas.",
             use_container_width=True
         )
     else:
