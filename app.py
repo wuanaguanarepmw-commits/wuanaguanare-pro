@@ -38,8 +38,14 @@ st.markdown(
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Centrar automáticamente todas las imágenes (incluyendo el logo) */
-        .stImage img {
+        /* Centrado absoluto y perfecto de todas las imágenes (logo) */
+        [data-testid="stImage"] {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+        [data-testid="stImage"] img {
             display: block;
             margin-left: auto;
             margin-right: auto;
