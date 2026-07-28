@@ -22,7 +22,7 @@ st.set_page_config(
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL: PALETA INDUSTRIAL (ACERO, CARBÓN Y ROJO LOGO)
+# CONFIGURACIÓN VISUAL: PALETA INDUSTRIAL Y CONTRASTE MÁXIMO GLOBAL
 # =====================================================================
 st.markdown(
     """
@@ -48,7 +48,7 @@ st.markdown(
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Paleta de colores: Metalmecánica Industrial (Carbón, Acero y Rojo Corporativo) */
+        /* Paleta de colores y CONTRASTE MÁXIMO para legibilidad en cualquier monitor */
         :root {
             --bg-deep: #0B0F19;
             --bg-card: #111827;
@@ -57,7 +57,23 @@ st.markdown(
             --primary-red: #DC2626;
             --accent-red: #EF4444;
             --text-main: #F9FAFB;
-            --text-muted: #9CA3AF;
+            --text-muted: #D1D5DB;
+        }
+        
+        /* Forzar alta visibilidad y contraste en todo el texto del sistema */
+        .stApp, p, span, label, div, [data-testid="stMarkdownContainer"], h1, h2, h3, h4, h5, h6 {
+            color: var(--text-main) !important;
+        }
+
+        /* Etiquetas de inputs con máximo contraste */
+        .stTextInput label, .stSelectbox label, .stNumberInput label {
+            color: var(--text-main) !important;
+            font-weight: 600 !important;
+        }
+
+        /* Métricas con alto contraste */
+        [data-testid="stMetricValue"], [data-testid="stMetricLabel"], [data-testid="stMetricDelta"] {
+            color: var(--text-main) !important;
         }
         
         /* Fondo general de la app */
@@ -93,6 +109,10 @@ st.markdown(
             background-color: var(--input-bg) !important;
             border-color: var(--input-border) !important;
             border-radius: 6px !important;
+            color: #FFFFFF !important;
+        }
+        [data-baseweb="input"] input {
+            color: #FFFFFF !important;
         }
         [data-baseweb="input"]:focus-within {
             border-color: var(--accent-red) !important;
@@ -316,7 +336,7 @@ if not st.session_state.autenticado:
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
 
-        st.markdown("<p style='text-align: center; color: #9CA3AF; font-size: 0.75rem; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #F9FAFB; font-size: 0.8rem; font-weight: 600; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
@@ -448,25 +468,25 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
         st.info(f"Argón disponible en **{cilindro_activo}**: **{presion_actual_cil} PSI**")
 
     with st.form(key="form_registro_diario", clear_on_submit=True):
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, vertical_alignment="center")
         with col1:
             soldador = st.selectbox("Soldador / Operador", options=options_operadores)
         with col2:
             soldadura_lineal = st.number_input("Soldadura Lineal (m)", min_value=0.0, value=0.0, format="%.2f")
 
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, vertical_alignment="center")
         with col1:
             orden_trabajo = st.text_input("Orden de Trabajo / Proyecto (Ej: OT-2026-04)", value="GENERAL")
         with col2:
             soldadura_no_lineal = st.number_input("Soldadura No Lineal (m)", min_value=0.0, value=0.0, format="%.2f")
 
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, vertical_alignment="center")
         with col1:
             p_cierre = st.number_input("Presión Cierre (PSI)", min_value=0, value=0)
         with col2:
             punteos = st.number_input("Punteos (Cantidad)", min_value=0, value=0)
 
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, vertical_alignment="center")
         with col1:
             tungstenos = st.number_input("Tungstenos gastados", min_value=0, value=0)
         with col2:
@@ -591,7 +611,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         unidad_seleccionada = st.selectbox("Unidad de Medida Principal", options=["kg", "g", "Unidad", "Litros", "Metros", "Pares"], key="select_unidad_stock")
 
         with st.form(key="form_inventario", clear_on_submit=True):
-            col_inv1, col_inv2, col_inv3 = st.columns(3)
+            col_inv1, col_inv2, col_inv3 = st.columns(3, vertical_alignment="center")
             with col_inv1:
                 cod_ins = st.text_input("Código o Lote del Insumo")
                 nombre_insumo = st.text_input("Nombre del Artículo")
@@ -678,7 +698,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         elif unidad_art_base in ["Litros", "l"]: unidades_posibles_retiro = ["ml", "Litros"]
         else: unidades_posibles_retiro = [unidad_art_base]
 
-        col_ent1, col_ent2, col_ent3, col_ent4 = st.columns(4)
+        col_ent1, col_ent2, col_ent3, col_ent4 = st.columns(4, vertical_alignment="center")
         with col_ent1:
             operador_elegido = st.selectbox("Operador Asignado", options=options_entrega_ops, key="ent_op")
         with col_ent2:
@@ -821,7 +841,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
         total_nolineal_gen = float(df_registros["soldadura_no_lineal"].sum())
         total_punteos_gen = int(df_registros["punteos"].sum())
 
-        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4, vertical_alignment="center")
         with col_m1:
             st.metric("Argón General", f"{total_argon_gen} PSI")
         with col_m2:
@@ -834,7 +854,7 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
         st.markdown("---")
 
         st.markdown("### 👤 Rendimiento y Totales por Operador")
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, vertical_alignment="center")
 
         with col1:
             df_argon_op = df_registros.groupby("soldador")["consumo_argon"].sum().reset_index()
@@ -845,6 +865,13 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                 color="soldador",
                 title="Consumo Total de Argón por Operador (PSI)",
                 labels={"consumo_argon": "Total PSI", "soldador": "Operador"},
+                template="plotly_dark"
+            )
+            fig_argon_op.update_layout(
+                paper_bgcolor="#111827",
+                plot_bgcolor="#111827",
+                font_color="#F9FAFB",
+                title_font_color="#F9FAFB"
             )
             st.plotly_chart(fig_argon_op, use_container_width=True, config={"displayModeBar": False})
 
@@ -857,6 +884,13 @@ elif menu == "REPORTES Y ANALÍTICA PRO":
                 barmode="group",
                 title="Metros de Soldadura por Operador",
                 labels={"value": "Metros (m)", "soldador": "Operador", "variable": "Tipo de Soldadura"},
+                template="plotly_dark"
+            )
+            fig_soldadura_op.update_layout(
+                paper_bgcolor="#111827",
+                plot_bgcolor="#111827",
+                font_color="#F9FAFB",
+                title_font_color="#F9FAFB"
             )
             st.plotly_chart(fig_soldadura_op, use_container_width=True, config={"displayModeBar": False})
 
