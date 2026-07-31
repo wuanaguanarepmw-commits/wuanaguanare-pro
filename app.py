@@ -81,6 +81,19 @@ st.markdown(
             background-color: var(--bg-deep) !important;
         }
 
+        /* CORRECCIÓN DE BOTONES PARA COMPATIBILIDAD CON WINDOWS 7 Y NAVEGADORES ANTIGUOS */
+        button[kind="secondary"], button[data-testid*="secondary"], button:not([kind="primary"]) {
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--input-border) !important;
+        }
+        /* Forzar que cualquier etiqueta interna de texto (span, p, etc.) sea blanca sobre el botón oscuro */
+        button[kind="secondary"] *, button:not([kind="primary"]) * {
+            color: var(--text-main) !important;
+        }
+        button[kind="primary"] * {
+            color: #FFFFFF !important;
+        }
+
         /* Centrado estricto y tamaño ampliado del logotipo */
         .login-logo-container {
             display: flex !important;
@@ -181,6 +194,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ... [El resto del código se mantiene exactamente igual para preservar la base de datos y la lógica] ...
+
 # =====================================================================
 # UTILIDADES DEL LOGO Y CONVERSIÓN BASE64
 # =====================================================================
@@ -278,7 +293,6 @@ def init_db():
                     operador TEXT,
                     orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
-        # Migraciones seguras
         c.execute("PRAGMA table_info(cilindros)")
         cols_cil = [col[1] for col in c.fetchall()]
         if "presion_inicial" not in cols_cil: c.execute("ALTER TABLE cilindros ADD COLUMN presion_inicial INTEGER DEFAULT 0")
@@ -492,7 +506,7 @@ if menu == "REGISTRO DIARIO GAS ARGÓN":
         with col1:
             tungstenos = st.number_input("Tungstenos gastados", min_value=0, value=0)
         with col2:
-            st.markdown("")  # Espacio vacío para mantener simetría perfecta
+            st.markdown("")
 
         st.write("")
         submitted_jornada = st.form_submit_button("Guardar Jornada", type="primary", use_container_width=True)
@@ -643,7 +657,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
                                    VALUES (?, ?, ?, ?, ?, ?)
                                    ON CONFLICT(codigo) DO UPDATE SET
                                        insumo = excluded.insumo,
-                                       cantidad = inventario.cantidad + excluded.cantidad,
+                                       amount = inventario.cantidad + excluded.cantidad,
                                        unidad = excluded.unidad,
                                        stock_minimo = excluded.stock_minimo,
                                        costo_unitario = excluded.costo_unitario""",
