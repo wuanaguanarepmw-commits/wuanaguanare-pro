@@ -94,7 +94,7 @@ st.markdown(
         button[kind="secondary"] *, button:not([kind="primary"]) * { color: var(--text-main) !important; }
         button[kind="primary"] * { color: #FFFFFF !important; }
 
-        /* CENTRADO PERFECTO DEL LOGO Y FORMULARIO DE ACCESO */
+        /* CENTRADO PERFECTO DEL LOGO */
         .login-wrapper {
             display: flex;
             flex-direction: column;
@@ -126,12 +126,7 @@ st.markdown(
             text-transform: uppercase;
         }
 
-        .login-inputs-container .stTextInput {
-            max-width: 400px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-        }
-
+        /* ESTILOS DE LOS INPUTS DE LOGIN */
         [data-baseweb="input"] {
             background-color: var(--input-bg) !important;
             border-color: var(--input-border) !important;
@@ -145,7 +140,6 @@ st.markdown(
         }
         
         button[kind="primary"] {
-            max-width: 400px !important;
             width: 100% !important;
             margin: 15px auto 0 auto !important;
             display: block !important;
@@ -328,11 +322,11 @@ if "autenticado" not in st.session_state:
     st.session_state.rol = None
 
 if not st.session_state.autenticado:
-    # Cambio en proporciones para forzar un centrado absoluto (1, 2, 1)
-    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
-    with col_l2:
-        st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-        
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+    
+    # BLOQUE 1: LOGO Y TÍTULO (Estructura ancha 1, 2, 1)
+    col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+    with col_logo2:
         ruta_logo = buscar_logo()
         if ruta_logo:
             encoded_logo = obtener_base64_imagen(ruta_logo)
@@ -351,10 +345,11 @@ if not st.session_state.autenticado:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
             st.markdown("<div class='login-title'>Acceso Corporativo Seguro en la Nube</div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="login-inputs-container">', unsafe_allow_html=True)
+    # BLOQUE 2: INPUTS DE INICIO DE SESIÓN (Estructura estrecha 3, 2, 3)
+    col_login1, col_login2, col_login3 = st.columns([3, 2, 3])
+    with col_login2:
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
-        st.markdown('</div>', unsafe_allow_html=True)
 
         if st.button("Iniciar Sesión", type="primary", use_container_width=True):
             conn = get_connection()
