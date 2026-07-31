@@ -164,6 +164,41 @@ st.markdown(
         section[data-testid="stSidebar"] > div { width: 300px !important; border-right: none !important; }
         section[data-testid="stSidebar"] hr { display: none !important; }
         .block-container { padding-top: 2rem !important; padding-bottom: 1rem !important; }
+
+        /* ========================================================= */
+        /* CORRECCIONES SOLICITADAS                                  */
+        /* ========================================================= */
+
+        /* 1. Ocultar el cuadro en el botón del ojito de contraseña */
+        [data-baseweb="input"] button {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        [data-baseweb="input"] button svg {
+            fill: var(--text-muted) !important;
+        }
+
+        /* 2. Arreglar el fondo blanco de los menús desplegables */
+        [data-baseweb="popover"] > div, 
+        [data-baseweb="menu"] {
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--input-border) !important;
+            border-radius: 6px !important;
+        }
+        ul[role="listbox"] {
+            background-color: var(--input-bg) !important;
+        }
+        li[role="option"] {
+            color: var(--text-main) !important;
+            background-color: transparent !important;
+        }
+        /* Color al pasar el ratón por encima de una opción */
+        li[role="option"]:hover, 
+        li[role="option"][aria-selected="true"] {
+            background-color: var(--primary-red) !important;
+            color: #FFFFFF !important;
+        }
     </style>
     
     <!-- Script de seguridad adicional -->
@@ -612,7 +647,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         conn = get_connection()
         df_cil_actualizado = pd.read_sql_query("SELECT * FROM cilindros", conn)
         conn.close()
-        st.dataframe(df_cil_actualizado, hide_index=True)
+        st.table(df_cil_actualizado.style.hide(axis="index"))
 
     # --- TAB 2: INVENTARIO E INSUMOS ---
     with tab2:
@@ -672,7 +707,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         df_inv = pd.read_sql_query("SELECT codigo, insumo, cantidad, unidad, stock_minimo, costo_unitario FROM inventario", conn)
         conn.close()
         if not df_inv.empty:
-            st.dataframe(df_inv, hide_index=True)
+            st.table(df_inv.style.hide(axis="index"))
         else:
             st.info("No hay insumos registrados en el inventario.")
 
@@ -783,7 +818,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
         conn = get_connection()
         df_ops = pd.read_sql_query("SELECT id, nombre FROM operadores", conn)
         conn.close()
-        st.dataframe(df_ops, hide_index=True)
+        st.table(df_ops.style.hide(axis="index"))
 
     # --- TAB 4: GESTIÓN DE USUARIOS (Solo TIC) ---
     if rol_actual == "TIC":
@@ -817,7 +852,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
             conn = get_connection()
             df_users = pd.read_sql_query("SELECT id, usuario, rol FROM usuarios_sistema", conn)
             conn.close()
-            st.dataframe(df_users, hide_index=True)
+            st.table(df_users.style.hide(axis="index"))
 
     # --- TAB 5: CIERRE DE PROYECTO ---
     with tab5:
