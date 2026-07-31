@@ -38,7 +38,7 @@ st.markdown(
         
         /* Ocultar texto de carga, spinner de Streamlit y badge */
         [data-testid="stStatusWidget"], 
-        .st-emotion-cache-1rqtjcb, /* Clase interna del spinner */
+        .st-emotion-cache-1rqtjcb, 
         .viewerBadge, 
         div[class*="viewerBadge"], 
         iframe[title="streamlit-badge"], 
@@ -166,14 +166,19 @@ st.markdown(
         .block-container { padding-top: 2rem !important; padding-bottom: 1rem !important; }
 
         /* ========================================================= */
-        /* CORRECCIONES SOLICITADAS                                  */
+        /* CORRECCIONES VISUALES DEFINITIVAS                         */
         /* ========================================================= */
 
-        /* 1. Ocultar el cuadro en el botón del ojito de contraseña */
+        /* 1. Eliminar completamente el cuadro, borde y fondo del botón del ojito de contraseña */
         [data-baseweb="input"] button {
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
+            outline: none !important;
+        }
+        [data-baseweb="input"] button:hover {
+            background-color: transparent !important;
+            border: none !important;
         }
         [data-baseweb="input"] button svg {
             fill: var(--text-muted) !important;
@@ -193,7 +198,6 @@ st.markdown(
             color: var(--text-main) !important;
             background-color: transparent !important;
         }
-        /* Color al pasar el ratón por encima de una opción */
         li[role="option"]:hover, 
         li[role="option"][aria-selected="true"] {
             background-color: var(--primary-red) !important;
@@ -201,7 +205,6 @@ st.markdown(
         }
     </style>
     
-    <!-- Script de seguridad adicional -->
     <script>
         function eliminarBanderas() {
             const elements = document.querySelectorAll('*');
@@ -214,7 +217,7 @@ st.markdown(
             const badge = document.querySelector('[data-testid="manage-app-button"]');
             if (badge) badge.remove();
         }
-        setInterval(eliminarBanderas, 100); /* Verificación más rápida */
+        setInterval(eliminarBanderas, 100);
     </script>
 """,
     unsafe_allow_html=True,
@@ -345,7 +348,7 @@ def init_db():
         conn.commit()
         conn.close()
     except Exception as e:
-        pass # Ignoramos el volcado de error directo en la interfaz de login para mayor pulcritud
+        pass
 
 init_db()
 
@@ -359,7 +362,6 @@ if "autenticado" not in st.session_state:
 if not st.session_state.autenticado:
     st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
     
-    # BLOQUE 1: LOGO Y TÍTULO (Estructura ancha 1, 2, 1)
     col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
     with col_logo2:
         ruta_logo = buscar_logo()
@@ -380,7 +382,6 @@ if not st.session_state.autenticado:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
             st.markdown("<div class='login-title'>Acceso Corporativo Seguro en la Nube</div>", unsafe_allow_html=True)
 
-    # BLOQUE 2: INPUTS DE INICIO DE SESIÓN (Estructura estrecha 3, 2, 3)
     col_login1, col_login2, col_login3 = st.columns([3, 2, 3])
     with col_login2:
         usuario_input = st.text_input("Usuario", key="login_user")
