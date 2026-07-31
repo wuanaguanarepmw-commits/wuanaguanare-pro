@@ -22,33 +22,44 @@ st.set_page_config(
 st.html("<script>window.parent.document.documentElement.lang = 'es';</script>")
 
 # =====================================================================
-# CONFIGURACIÓN VISUAL: PALETA INDUSTRIAL Y CONTRASTE MÁXIMO GLOBAL
+# CONFIGURACIÓN VISUAL: PALETA INDUSTRIAL Y OCULTACIÓN DE STREAMLIT
 # =====================================================================
 st.markdown(
     """
     <style>
+        /* Ocultar elementos nativos de Streamlit de forma agresiva */
         #MainMenu { visibility: hidden !important; display: none !important; }
-        header[data-testid="stHeader"] { display: none !important; visibility: hidden !important; }
+        header { visibility: hidden !important; display: none !important; height: 0px !important; }
         footer { visibility: hidden !important; display: none !important; }
         [data-testid="stToolbar"] { display: none !important; visibility: hidden !important; }
         .stAppDeployButton { display: none !important; visibility: hidden !important; }
         [data-testid="stSidebarCollapseButton"], 
         [data-testid="collapsedControl"] { display: none !important; }
         
-        /* Ocultar completamente insignia, barra flotante y botón Manage app de Streamlit */
-        .viewerBadge, div[class*="viewerBadge"], [data-testid="stStatusWidget"], iframe[title="streamlit-badge"], [data-testid="manage-app-button"] {
+        /* Ocultar texto de carga, spinner de Streamlit y badge */
+        [data-testid="stStatusWidget"], 
+        .st-emotion-cache-1rqtjcb, /* Clase interna del spinner */
+        .viewerBadge, 
+        div[class*="viewerBadge"], 
+        iframe[title="streamlit-badge"], 
+        [data-testid="manage-app-button"] {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
             pointer-events: none !important;
             height: 0 !important;
             width: 0 !important;
+            position: fixed !important;
+            z-index: -9999 !important;
         }
         
+        /* Ocultar decoración superior de Streamlit */
+        [data-testid="stDecoration"] { display: none !important; visibility: hidden !important; }
+
         /* Ocultar texto de ayuda "Press Enter to apply" en los inputs */
         [data-testid="InputInstructions"] { display: none !important; visibility: hidden !important; }
         
-        /* Paleta de colores y CONTRASTE MÁXIMO para legibilidad en cualquier monitor */
+        /* Paleta de colores y CONTRASTE MÁXIMO */
         :root {
             --bg-deep: #0B0F19;
             --bg-card: #111827;
@@ -60,47 +71,43 @@ st.markdown(
             --text-muted: #D1D5DB;
         }
         
-        /* Forzar alta visibilidad y contraste en todo el texto del sistema */
+        .stApp { background-color: var(--bg-deep) !important; }
+
         .stApp, p, span, label, div, [data-testid="stMarkdownContainer"], h1, h2, h3, h4, h5, h6 {
             color: var(--text-main) !important;
         }
 
-        /* Etiquetas de inputs con máximo contraste */
         .stTextInput label, .stSelectbox label, .stNumberInput label {
             color: var(--text-main) !important;
             font-weight: 600 !important;
         }
 
-        /* Métricas con alto contraste */
         [data-testid="stMetricValue"], [data-testid="stMetricLabel"], [data-testid="stMetricDelta"] {
             color: var(--text-main) !important;
         }
         
-        /* Fondo general de la app */
-        .stApp {
-            background-color: var(--bg-deep) !important;
-        }
-
-        /* CORRECCIÓN DE BOTONES PARA COMPATIBILIDAD CON WINDOWS 7 Y NAVEGADORES ANTIGUOS */
+        /* CORRECCIÓN DE BOTONES */
         button[kind="secondary"], button[data-testid*="secondary"], button:not([kind="primary"]) {
             background-color: var(--input-bg) !important;
             border: 1px solid var(--input-border) !important;
         }
-        /* Forzar que cualquier etiqueta interna de texto (span, p, etc.) sea blanca sobre el botón oscuro */
-        button[kind="secondary"] *, button:not([kind="primary"]) * {
-            color: var(--text-main) !important;
-        }
-        button[kind="primary"] * {
-            color: #FFFFFF !important;
-        }
+        button[kind="secondary"] *, button:not([kind="primary"]) * { color: var(--text-main) !important; }
+        button[kind="primary"] * { color: #FFFFFF !important; }
 
-        /* Centrado estricto y tamaño ampliado del logotipo */
+        /* CENTRADO PERFECTO DEL LOGO Y FORMULARIO DE ACCESO */
+        .login-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
         .login-logo-container {
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
             width: 100% !important;
-            margin-bottom: 25px !important;
+            margin-bottom: 20px !important;
         }
         .login-logo-container img {
             max-width: 320px !important;
@@ -109,34 +116,38 @@ st.markdown(
             display: block !important;
             margin: 0 auto !important;
         }
+        .login-title {
+            text-align: center;
+            color: #F9FAFB;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
 
-        /* Ancho compacto y centrado exclusivo para los campos de acceso */
         .login-inputs-container .stTextInput {
-            max-width: 380px !important;
+            max-width: 400px !important;
             margin-left: auto !important;
             margin-right: auto !important;
         }
 
-        /* Estilos limpios para los inputs de acceso */
         [data-baseweb="input"] {
             background-color: var(--input-bg) !important;
             border-color: var(--input-border) !important;
             border-radius: 6px !important;
             color: #FFFFFF !important;
         }
-        [data-baseweb="input"] input {
-            color: #FFFFFF !important;
-        }
+        [data-baseweb="input"] input { color: #FFFFFF !important; }
         [data-baseweb="input"]:focus-within {
             border-color: var(--accent-red) !important;
             box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3) !important;
         }
         
-        /* Botón principal compacto y centrado en tono Rojo Industrial */
         button[kind="primary"] {
-            max-width: 380px !important;
+            max-width: 400px !important;
             width: 100% !important;
-            margin: 10px auto 0 auto !important;
+            margin: 15px auto 0 auto !important;
             display: block !important;
             background-color: var(--primary-red) !important;
             border: none !important;
@@ -145,9 +156,7 @@ st.markdown(
             border-radius: 6px !important;
             box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
         }
-        button[kind="primary"]:hover {
-            background-color: #B91C1C !important;
-        }
+        button[kind="primary"]:hover { background-color: #B91C1C !important; }
 
         section[data-testid="stSidebar"] {
             display: block !important;
@@ -158,41 +167,30 @@ st.markdown(
             border-right: none !important;
             background-color: var(--bg-card) !important;
         }
-        section[data-testid="stSidebar"] > div {
-            width: 300px !important;
-            border-right: none !important;
-        }
-        section[data-testid="stSidebar"] hr {
-            display: none !important;
-        }
-        [data-testid="stDecoration"] { display: none !important; }
-        .block-container {
-            padding-top: 1rem !important;
-            padding-bottom: 1rem !important;
-        }
+        section[data-testid="stSidebar"] > div { width: 300px !important; border-right: none !important; }
+        section[data-testid="stSidebar"] hr { display: none !important; }
+        .block-container { padding-top: 2rem !important; padding-bottom: 1rem !important; }
     </style>
     
-    <!-- Script de seguridad para eliminar permanentemente el botón Manage App -->
+    <!-- Script de seguridad adicional -->
     <script>
-        function eliminarManageApp() {
+        function eliminarBanderas() {
             const elements = document.querySelectorAll('*');
             elements.forEach(el => {
                 if (el.innerText && el.innerText.includes('Manage app')) {
                     let parent = el.closest('div[style*="position: fixed"]') || el.parentElement;
-                    if (parent) {
-                        parent.style.display = 'none';
-                        parent.style.visibility = 'hidden';
-                    }
+                    if (parent) { parent.style.display = 'none'; parent.style.visibility = 'hidden'; }
                 }
             });
             const badge = document.querySelector('[data-testid="manage-app-button"]');
             if (badge) badge.remove();
         }
-        setInterval(eliminarManageApp, 400);
+        setInterval(eliminarBanderas, 100); /* Verificación más rápida */
     </script>
 """,
     unsafe_allow_html=True,
 )
+
 
 # =====================================================================
 # UTILIDADES DEL LOGO Y CONVERSIÓN BASE64
@@ -291,8 +289,7 @@ def init_db():
                     operador TEXT,
                     orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
-        c.pragma_table_info = "PRAGMA table_info(cilindros)"
-        c.execute(c.pragma_table_info)
+        c.execute("PRAGMA table_info(cilindros)")
         cols_cil = [col[1] for col in c.fetchall()]
         if "presion_inicial" not in cols_cil: c.execute("ALTER TABLE cilindros ADD COLUMN presion_inicial INTEGER DEFAULT 0")
         if "presion_actual" not in cols_cil: c.execute("ALTER TABLE cilindros ADD COLUMN presion_actual INTEGER DEFAULT 0")
@@ -319,7 +316,7 @@ def init_db():
         conn.commit()
         conn.close()
     except Exception as e:
-        st.error(f"Error crítico al inicializar la base de datos: {e}")
+        pass # Ignoramos el volcado de error directo en la interfaz de login para mayor pulcritud
 
 init_db()
 
@@ -331,32 +328,34 @@ if "autenticado" not in st.session_state:
     st.session_state.rol = None
 
 if not st.session_state.autenticado:
-    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
+    # Cambio en proporciones para forzar un centrado absoluto (1, 2, 1)
+    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
     with col_l2:
-        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
         
         ruta_logo = buscar_logo()
         if ruta_logo:
             encoded_logo = obtener_base64_imagen(ruta_logo)
             st.markdown(
                 f"""
-                <div class="login-logo-container">
-                    <img src="data:image/png;base64,{encoded_logo}">
+                <div class="login-wrapper">
+                    <div class="login-logo-container">
+                        <img src="data:image/png;base64,{encoded_logo}">
+                    </div>
+                    <div class="login-title">Acceso Corporativo Seguro en la Nube</div>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
         else:
             st.warning("⚠️ Falta el archivo del logo en GitHub.")
-
-        st.markdown("<p style='text-align: center; color: #F9FAFB; font-size: 0.8rem; font-weight: 600; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
+            st.markdown("<div class='login-title'>Acceso Corporativo Seguro en la Nube</div>", unsafe_allow_html=True)
 
         st.markdown('<div class="login-inputs-container">', unsafe_allow_html=True)
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
         if st.button("Iniciar Sesión", type="primary", use_container_width=True):
             conn = get_connection()
             c = conn.cursor()
