@@ -194,8 +194,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ... [El resto del código se mantiene exactamente igual para preservar la base de datos y la lógica] ...
-
 # =====================================================================
 # UTILIDADES DEL LOGO Y CONVERSIÓN BASE64
 # =====================================================================
@@ -293,7 +291,8 @@ def init_db():
                     operador TEXT,
                     orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
-        c.execute("PRAGMA table_info(cilindros)")
+        c.pragma_table_info = "PRAGMA table_info(cilindros)"
+        c.execute(c.pragma_table_info)
         cols_cil = [col[1] for col in c.fetchall()]
         if "presion_inicial" not in cols_cil: c.execute("ALTER TABLE cilindros ADD COLUMN presion_inicial INTEGER DEFAULT 0")
         if "presion_actual" not in cols_cil: c.execute("ALTER TABLE cilindros ADD COLUMN presion_actual INTEGER DEFAULT 0")
@@ -657,7 +656,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
                                    VALUES (?, ?, ?, ?, ?, ?)
                                    ON CONFLICT(codigo) DO UPDATE SET
                                        insumo = excluded.insumo,
-                                       amount = inventario.cantidad + excluded.cantidad,
+                                       cantidad = inventario.cantidad + excluded.cantidad,
                                        unidad = excluded.unidad,
                                        stock_minimo = excluded.stock_minimo,
                                        costo_unitario = excluded.costo_unitario""",
