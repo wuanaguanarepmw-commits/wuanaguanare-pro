@@ -97,8 +97,8 @@ st.markdown(
             margin: 0 auto !important;
         }
 
-        /* Ancho compacto y centrado para los campos de usuario y contraseña */
-        .stTextInput {
+        /* Ancho compacto y centrado exclusivo para los campos de acceso */
+        .login-inputs-container .stTextInput {
             max-width: 380px !important;
             margin-left: auto !important;
             margin-right: auto !important;
@@ -338,8 +338,10 @@ if not st.session_state.autenticado:
 
         st.markdown("<p style='text-align: center; color: #F9FAFB; font-size: 0.8rem; font-weight: 600; letter-spacing: 1.5px; margin: 0px 0px 20px 0px; text-transform: uppercase;'>Acceso Corporativo Seguro en la Nube</p>", unsafe_allow_html=True)
 
+        st.markdown('<div class="login-inputs-container">', unsafe_allow_html=True)
         usuario_input = st.text_input("Usuario", key="login_user")
         password_input = st.text_input("Contraseña", type="password", key="login_pass")
+        st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
         if st.button("Iniciar Sesión", type="primary", use_container_width=True):
