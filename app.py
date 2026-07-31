@@ -321,29 +321,15 @@ def init_db():
                     operador TEXT,
                     orden_trabajo TEXT DEFAULT 'GENERAL')""")
 
-        c.execute("PRAGMA table_info(cilindros)")
-        cols_cil = [col[1] for col in c.fetchall()]
-        if "presion_inicial" not in cols_cil: c.execute("ALTER TABLE cilindros ADD COLUMN presion_inicial INTEGER DEFAULT 0")
-        if "presion_actual" not in cols_cil: c.execute("ALTER TABLE cilindros ADD COLUMN presion_actual INTEGER DEFAULT 0")
-
-        c.execute("PRAGMA table_info(inventario)")
-        cols_inv = [col[1] for col in c.fetchall()]
-        if "stock_minimo" not in cols_inv: c.execute("ALTER TABLE inventario ADD COLUMN stock_minimo REAL DEFAULT 0.0")
-        if "costo_unitario" not in cols_inv: c.execute("ALTER TABLE inventario ADD COLUMN costo_unitario REAL DEFAULT 0.0")
-
-        c.execute("PRAGMA table_info(registros_diarios)")
-        cols_reg = [col[1] for col in c.fetchall()]
-        if "soldadura_lineal" not in cols_reg: c.execute("ALTER TABLE registros_diarios ADD COLUMN soldadura_lineal REAL DEFAULT 0.0")
-        if "soldadura_no_lineal" not in cols_reg: c.execute("ALTER TABLE registros_diarios ADD COLUMN soldadura_no_lineal REAL DEFAULT 0.0")
-        if "punteos" not in cols_reg: c.execute("ALTER TABLE registros_diarios ADD COLUMN punteos INTEGER DEFAULT 0")
-        if "tungstenos" not in cols_reg: c.execute("ALTER TABLE registros_diarios ADD COLUMN tungstenos INTEGER DEFAULT 0")
-        if "varilla_gastada" not in cols_reg: c.execute("ALTER TABLE registros_diarios ADD COLUMN varilla_gastada REAL DEFAULT 0.0")
-        if "orden_trabajo" not in cols_reg: c.execute("ALTER TABLE registros_diarios ADD COLUMN orden_trabajo TEXT DEFAULT 'GENERAL'")
-
-        c.execute("PRAGMA table_info(historial_entregas)")
-        cols_hist = [col[1] for col in c.fetchall()]
-        if "codigo_insumo" not in cols_hist: c.execute("ALTER TABLE historial_entregas ADD COLUMN codigo_insumo TEXT")
-        if "orden_trabajo" not in cols_hist: c.execute("ALTER TABLE historial_entregas ADD COLUMN orden_trabajo TEXT DEFAULT 'GENERAL'")
+        # NUEVA TABLA: Mantenimiento Industrial
+        c.execute("""CREATE TABLE IF NOT EXISTS mantenimiento_industrial (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fecha TEXT,
+                    equipo_area TEXT,
+                    tipo_mantenimiento TEXT,
+                    descripcion TEXT,
+                    responsable TEXT,
+                    estado TEXT)""")
 
         conn.commit()
         conn.close()
@@ -419,7 +405,8 @@ def cerrar_y_reiniciar_proyecto(directorio_respaldos="historico_db"):
         with conn:
             conn.execute("DELETE FROM registros_diarios;")
             conn.execute("DELETE FROM historial_entregas;")
-            conn.execute("DELETE FROM sqlite_sequence WHERE name IN ('registros_diarios', 'historial_entregas');")
+            conn.execute("DELETE FROM mantenimiento_industrial;")
+            conn.execute("DELETE FROM sqlite_sequence WHERE name IN ('registros_diarios', 'historial_entregas', 'mantenimiento_industrial');")
         conn.close()
 
         conn_vacuum = sqlite3.connect("wuanaguanare_db.sqlite", check_same_thread=False)
@@ -440,18 +427,18 @@ if ruta_logo_sidebar:
 else:
     st.sidebar.title("WUANAGUANARE PMW")
 
-st.sidebar.caption("Software Industrial en la Nube v2.7 Pro")
+st.sidebar.caption("Software Industrial en la Nube v2.8 Pro")
 
 rol_actual = st.session_state.get("rol", "TIC")
 
 if rol_actual == "TIC":
-    opciones_menu = ["REGISTRO DIARIO GAS ARGÓN", "GESTIÓN DE PLANTA Y PROYECTOS", "REPORTES Y ANALÍTICA PRO"]
+    opciones_menu = ["REGISTRO DIARIO GAS ARGÓN", "GESTIÓN DE PLANTA Y PROYECTOS", "GESTIÓN DE MANTENIMIENTO INDUSTRIAL", "REPORTES Y ANALÍTICA PRO"]
 elif rol_actual == "Seguimiento":
     opciones_menu = ["REGISTRO DIARIO GAS ARGÓN", "REPORTES Y ANALÍTICA PRO"]
 elif rol_actual == "Almacén":
-    opciones_menu = ["GESTIÓN DE PLANTA Y PROYECTOS"]
+    opciones_menu = ["GESTIÓN DE PLANTA Y PROYECTOS", "GESTIÓN DE MANTENIMIENTO INDUSTRIAL"]
 elif rol_actual == "Gerencia":
-    opciones_menu = ["REPORTES Y ANALÍTICA PRO"]
+    opciones_menu = ["GESTIÓN DE MANTENIMIENTO INDUSTRIAL", "REPORTES Y ANALÍTICA PRO"]
 else:
     opciones_menu = ["REGISTRO DIARIO GAS ARGÓN"]
 
@@ -858,7 +845,7 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
     # --- TAB 5: CIERRE DE PROYECTO ---
     with tab5:
         st.subheader("Cierre y Restablecimiento de Proyecto")
-        st.warning("⚠️ **Zona de Cierre:** Esta acción genera un respaldo automático con base de datos histórica comprimida y reinicia los contadores transaccionales (Registros diarios e historial de entregas) para iniciar un nuevo proyecto o ciclo de fabricación.")
+        st.warning("⚠️ **Zona de Cierre:** Esta acción genera un respaldo automático con base de datos histórica comprimida y reinicia los contadores transaccionales (Registros diarios, entregas y mantenimiento) para iniciar un nuevo proyecto o ciclo de fabricación.")
         
         confirmar_cierre = st.checkbox("Confirmo que deseo cerrar el proyecto actual y vaciar los registros transaccionales")
         if st.button("Finalizar y Reiniciar Proyecto", type="primary", disabled=not confirmar_cierre):
@@ -868,6 +855,83 @@ elif menu == "GESTIÓN DE PLANTA Y PROYECTOS":
                 st.balloons()
             else:
                 st.error(mensaje)
+
+# =====================================================================
+# MÓDULO NUEVO: GESTIÓN DE MANTENIMIENTO INDUSTRIAL
+# =====================================================================
+elif menu == "GESTIÓN DE MANTENIMIENTO INDUSTRIAL":
+    st.header("⚙️ Gestión de Mantenimiento Industrial y Reparaciones")
+
+    with st.form(key="form_mantenimiento", clear_on_submit=True):
+        col1, col2 = st.columns(2, vertical_alignment="center")
+        with col1:
+            equipo_area = st.text_input("Equipo / Máquina / Área (Ej: Torno Universal B102, Guillotina, Planta)")
+        with col2:
+            tipo_mant = st.selectbox("Tipo de Intervención", options=["Preventivo", "Correctivo / Reparación", "Sustitución de Componentes", "Instalación / Montaje"])
+
+        descripcion_trabajo = st.text_area("Descripción Detallada del Trabajo Realizado")
+
+        col1, col2 = st.columns(2, vertical_alignment="center")
+        with col1:
+            responsable_mant = st.text_input("Técnico / Responsable", value="TALLER")
+        with col2:
+            estado_mant = st.selectbox("Estado", options=["Completado", "En Proceso", "En Espera de Repuestos"])
+
+        submitted_mant = st.form_submit_button("Registrar Mantenimiento", type="primary", use_container_width=True)
+
+        if submitted_mant:
+            if not equipo_area.strip() or not descripcion_trabajo.strip():
+                st.error("Debe indicar el equipo/área y la descripción de la labor.")
+            else:
+                try:
+                    conn = get_connection()
+                    with conn:
+                        c = conn.cursor()
+                        c.execute(
+                            """INSERT INTO mantenimiento_industrial 
+                               (fecha, equipo_area, tipo_mantenimiento, descripcion, responsable, estado) 
+                               VALUES (?, ?, ?, ?, ?, ?)""",
+                            (
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                equipo_area.strip().upper(),
+                                tipo_mant,
+                                descripcion_trabajo.strip(),
+                                responsable_mant.strip().upper(),
+                                estado_mant
+                            ),
+                        )
+                    conn.close()
+                    st.session_state["toast_mant"] = "Registro de mantenimiento guardado exitosamente."
+                    st.rerun()
+                except Exception as ex:
+                    st.error(f"Error al guardar el registro: {ex}")
+
+    if "toast_mant" in st.session_state:
+        st.toast(st.session_state["toast_mant"], icon="🔧")
+        del st.session_state["toast_mant"]
+
+    st.write("---")
+    st.subheader("Historial de Intervenciones en Planta")
+    
+    conn = get_connection()
+    df_mantenimiento = pd.read_sql_query("SELECT * FROM mantenimiento_industrial ORDER BY id DESC", conn)
+    conn.close()
+
+    if not df_mantenimiento.empty:
+        st.dataframe(df_mantenimiento, use_container_width=True)
+        
+        def convertir_a_csv_mant(df):
+            return df.to_csv(index=False).encode("utf-8")
+
+        st.download_button(
+            label="📥 Descargar Reporte de Mantenimiento (CSV)",
+            data=convertir_a_csv_mant(df_mantenimiento),
+            file_name=f"reporte_mantenimiento_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+    else:
+        st.info("No hay registros de mantenimiento industrial cargados todavía.")
 
 # =====================================================================
 # MÓDULO 3: REPORTES Y ANALÍTICA PRO
